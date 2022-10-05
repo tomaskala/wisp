@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "scanner.h"
+
 #define PROGRAM_NAME "lisp"
 
 #define EXIT_USAGE_ERROR 64
@@ -61,6 +63,9 @@ static int run_file(const char *path)
     return EXIT_IO_ERROR;
 
   printf("%s\n", source);
+
+  struct scanner sc;
+  scanner_init(&sc, source);
   // TODO: interpret(source);
   // TODO: free(source);
   // TODO: compile error => EXIT_DATA_ERROR

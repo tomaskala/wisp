@@ -67,9 +67,9 @@ static int run_file(const char *path)
   struct scanner sc;
   scanner_init(&sc, source);
   // TODO: interpret(source);
-  // TODO: free(source);
   // TODO: compile error => EXIT_DATA_ERROR
   // TODO: interpret error => EXIT_SOFTWARE_ERROR
+  free(source);
 
   return EXIT_SUCCESS;
 }

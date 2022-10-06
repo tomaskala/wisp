@@ -1,6 +1,7 @@
 # Executables
 lisp
 dbg
+tests
 
 # Prerequisites
 *.d

@@ -18,7 +18,7 @@ static int count_pass = 0;
     } \
   } while (false)
 
-void test_scan_simple(void)
+static void test_scanner_simple(void)
 {
   const char *sources[] = {"(", ")", "'", ".", "\0", NULL};
   enum token_type types[] = {
@@ -34,16 +34,240 @@ void test_scan_simple(void)
     scanner_init(&sc, sources[i]);
 
     struct token tok = scanner_next(&sc);
-    TEST(tok.type == types[i], "simple token '%s'", sources[i]);
+    TEST(tok.type == types[i], "simple token '%s', type", sources[i]);
 
     tok = scanner_next(&sc);
     TEST(tok.type == TOKEN_EOF, "simple token '%s', source end", sources[i]);
   }
 }
 
+static void test_scanner_identifier(void)
+{
+  {
+    const char *sources[] = {
+      "asdf", "snake_case", "a12", "+/", "kebab-case",
+      "a->b", "<>", "  camelCase\t", "->>", "@", "&b",
+      NULL,
+    };
+    int lengths[] = {4, 10, 3, 2, 10, 4, 2, 9, 3, 1, 2};
+
+    for (int i = 0; sources[i] != NULL; ++i) {
+      struct scanner sc;
+      scanner_init(&sc, sources[i]);
+
+      struct token tok = scanner_next(&sc);
+      TEST(tok.type == TOKEN_IDENTIFIER, "identifier '%s', type", sources[i]);
+      TEST(tok.length == lengths[i], "identifier '%s', length %d",
+        sources[i], lengths[i]);
+
+      tok = scanner_next(&sc);
+      TEST(tok.type == TOKEN_EOF, "identifier '%s', source end", sources[i]);
+    }
+  }
+
+  {
+    const char *source = "space case";
+    enum token_type types[] = {TOKEN_IDENTIFIER, TOKEN_IDENTIFIER};
+
+    struct scanner sc;
+    scanner_init(&sc, source);
+
+    for (int i = 0; i < 2; ++i) {
+      struct token tok = scanner_next(&sc);
+      TEST(tok.type == types[i], "invalid identifier '%s':%d",
+        source, i);
+    }
+
+    struct token tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_EOF, "invalid identifier '%s', source end", source);
+  }
+
+  {
+    const char *source = "with(parenthesis";
+    enum token_type types[] = {
+      TOKEN_IDENTIFIER, TOKEN_LEFT_PAREN, TOKEN_IDENTIFIER
+    };
+
+    struct scanner sc;
+    scanner_init(&sc, source);
+
+    for (int i = 0; i < 3; ++i) {
+      struct token tok = scanner_next(&sc);
+      TEST(tok.type == types[i], "invalid identifier '%s':%d",
+        source, i);
+    }
+
+    struct token tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_EOF, "invalid identifier '%s', source end", source);
+  }
+
+  {
+    const char *source = "with.dot";
+    enum token_type types[] = {
+      TOKEN_IDENTIFIER, TOKEN_DOT, TOKEN_IDENTIFIER
+    };
+
+    struct scanner sc;
+    scanner_init(&sc, source);
+
+    for (int i = 0; i < 3; ++i) {
+      struct token tok = scanner_next(&sc);
+      TEST(tok.type == types[i], "invalid identifier '%s':%d",
+        source, i);
+    }
+
+    struct token tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_EOF, "invalid identifier '%s', source end", source);
+  }
+
+  {
+    const char *source = "multi\nline";
+    enum token_type types[] = {TOKEN_IDENTIFIER, TOKEN_IDENTIFIER};
+
+    struct scanner sc;
+    scanner_init(&sc, source);
+
+    for (int i = 0; i < 2; ++i) {
+      struct token tok = scanner_next(&sc);
+      TEST(tok.type == types[i], "invalid identifier '%s':%d",
+        source, i);
+    }
+
+    struct token tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_EOF, "invalid identifier '%s', source end", source);
+  }
+}
+
+static void test_scanner_number(void)
+{
+  const char *sources[] = {
+    "0", "1", "13234", "3.1415", "0.1", "123.21",
+    "  134", "\n123432.432 ", "\t\t67\n", NULL};
+  int lengths[] = {
+    1, 1, 5, 6, 3, 6,
+    3, 10, 2,
+  };
+
+  for (int i = 0; sources[i] != NULL; ++i) {
+    struct scanner sc;
+    scanner_init(&sc, sources[i]);
+
+    struct token tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_NUMBER, "number token '%s', type", sources[i]);
+    TEST(tok.length == lengths[i], "number token '%s', length %d",
+      sources[i], lengths[i]);
+
+    tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_EOF, "number token '%s', source end", sources[i]);
+  }
+}
+
+static void test_scanner_skip_comment(void)
+{
+  {
+    const char *source = \
+      "; This is a comment.\n"
+      "123\n";
+    struct scanner sc;
+    scanner_init(&sc, source);
+
+    struct token tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_NUMBER, "skip comment %d", 1);
+    TEST(tok.length == 3, "skip comment %d, length %d", 1, tok.length);
+    TEST(tok.line == 2, "skip comment %d, line %d", 1, tok.line);
+
+    tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_EOF, "skip comment %d, source end", 1);
+  }
+
+  {
+    const char *source = \
+      "123\n"
+      "; This is a comment.\n"
+      "4567\n";
+    struct scanner sc;
+    scanner_init(&sc, source);
+
+    struct token tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_NUMBER, "skip comment %d", 2);
+    TEST(tok.length == 3, "skip comment %d, length %d", 2, tok.length);
+    TEST(tok.line == 1, "skip comment %d, line %d", 2, tok.line);
+
+    tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_NUMBER, "skip comment %d", 2);
+    TEST(tok.length == 4, "skip comment %d, length %d", 2, tok.length);
+    TEST(tok.line == 3, "skip comment %d, line %d", 2, tok.line);
+
+    tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_EOF, "skip comment %d, source end", 2);
+  }
+}
+
+static void test_scanner_compound(void)
+{
+  {
+    const char *source = "(123)";
+    enum token_type types[] = {
+      TOKEN_LEFT_PAREN,
+      TOKEN_NUMBER,
+      TOKEN_RIGHT_PAREN,
+    };
+    struct scanner sc;
+    scanner_init(&sc, source);
+
+    for (int i = 0; i < 3; ++i) {
+      struct token tok = scanner_next(&sc);
+      TEST(tok.type == types[i], "compound %d:%d", 1, i + 1);
+    }
+
+    struct token tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_EOF, "compound %d, source end", 1);
+  }
+
+  {
+    const char *source = "((1 . 2) 3 '(4 . 5) (fun 5.6 7))";
+    enum token_type types[] = {
+      TOKEN_LEFT_PAREN,
+      TOKEN_LEFT_PAREN,
+      TOKEN_NUMBER,
+      TOKEN_DOT,
+      TOKEN_NUMBER,
+      TOKEN_RIGHT_PAREN,
+      TOKEN_NUMBER,
+      TOKEN_QUOTE,
+      TOKEN_LEFT_PAREN,
+      TOKEN_NUMBER,
+      TOKEN_DOT,
+      TOKEN_NUMBER,
+      TOKEN_RIGHT_PAREN,
+      TOKEN_LEFT_PAREN,
+      TOKEN_IDENTIFIER,
+      TOKEN_NUMBER,
+      TOKEN_NUMBER,
+      TOKEN_RIGHT_PAREN,
+      TOKEN_RIGHT_PAREN,
+    };
+    struct scanner sc;
+    scanner_init(&sc, source);
+
+    for (int i = 0; i < 19; ++i) {
+      struct token tok = scanner_next(&sc);
+      TEST(tok.type == types[i], "compound %d:%d", 2, i + 1);
+    }
+
+    struct token tok = scanner_next(&sc);
+    TEST(tok.type == TOKEN_EOF, "compound %d, source end", 2);
+  }
+}
+
 int main(void)
 {
-  test_scan_simple();
+  // Scanner tests.
+  test_scanner_simple();
+  test_scanner_identifier();
+  test_scanner_number();
+  test_scanner_skip_comment();
+  test_scanner_compound();
 
   printf("%d failed, %d passed\n", count_fail, count_pass);
   return count_fail != 0;

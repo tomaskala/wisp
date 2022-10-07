@@ -22,6 +22,12 @@ void chunk_write(struct chunk *chunk, uint8_t codepoint, int line)
   chunk->count++;
 }
 
+int chunk_add_constant(struct chunk *chunk, value constant)
+{
+  value_array_write(&chunk->constants, constant);
+  return chunk->constants.count - 1;
+}
+
 void chunk_free(struct chunk *chunk)
 {
   FREE(chunk->code);

@@ -9,7 +9,8 @@ SRCS = \
 	src/scanner.c \
 	src/chunk.c \
 	src/memory.c \
-	src/compiler.c
+	src/compiler.c \
+	src/value.c
 
 DBGEXE     = dbg
 DBGOBJS    = src/main.dbg.o $(SRCS:.c=.dbg.o)

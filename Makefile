@@ -6,7 +6,9 @@ LDFLAGS =
 LDLIBS  =
 
 SRCS = \
-	src/scanner.c
+	src/scanner.c \
+	src/chunk.c \
+	src/memory.c
 
 DBGEXE     = dbg
 DBGOBJS    = src/main.dbg.o $(SRCS:.c=.dbg.o)

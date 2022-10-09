@@ -99,11 +99,42 @@ static struct token number(struct scanner *sc)
   return make_token(sc, TOKEN_NUMBER);
 }
 
-static struct token identifier(struct scanner *sc)
+static enum token_type check_keyword(struct scanner *sc, int start, int len,
+    const char *rest, enum token_type type)
+{
+  if (sc->current - sc->start == start + len
+      && memcmp(sc->start + start, rest, len) == 0)
+    return type;
+
+  return TOKEN_IDENTIFIER;
+}
+
+static enum token_type identifier_type(struct scanner *sc)
 {
   while (is_valid_identifier(peek(sc)))
     advance(sc);
-  return make_token(sc, TOKEN_IDENTIFIER);
+
+  switch (sc->start[0]) {
+  case 'c':
+    if (sc->current - sc->start > 1) {
+      switch (sc->start[1]) {
+      case 'a': return check_keyword(sc, 2, 1, "r", TOKEN_CAR);
+      case 'd': return check_keyword(sc, 2, 1, "r", TOKEN_CDR);
+      case 'o': return check_keyword(sc, 2, 2, "ns", TOKEN_CONS);
+      }
+    }
+    break;
+  case 'd': return check_keyword(sc, 1, 5, "efine", TOKEN_DEFINE);
+  case 'l': return check_keyword(sc, 1, 5, "ambda", TOKEN_LAMBDA);
+  case 'q': return check_keyword(sc, 1, 4, "uote", TOKEN_QUOTE);
+  }
+
+  return TOKEN_IDENTIFIER;
+}
+
+static struct token identifier(struct scanner *sc)
+{
+  return make_token(sc, identifier_type(sc));
 }
 
 struct token scanner_next(struct scanner *sc)

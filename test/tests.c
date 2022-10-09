@@ -20,13 +20,32 @@ static int count_pass = 0;
 
 static void test_scanner_simple(void)
 {
-  const char *sources[] = {"(", ")", "'", ".", "\0", NULL};
+  const char *sources[] = {
+    "(",
+    ")",
+    "'",
+    ".",
+    "\0",
+    "define",
+    "lambda",
+    "quote",
+    "car",
+    "cdr",
+    "cons",
+    NULL,
+  };
   enum token_type types[] = {
     TOKEN_LEFT_PAREN,
     TOKEN_RIGHT_PAREN,
     TOKEN_QUOTE,
     TOKEN_DOT,
     TOKEN_EOF,
+    TOKEN_DEFINE,
+    TOKEN_LAMBDA,
+    TOKEN_QUOTE,
+    TOKEN_CAR,
+    TOKEN_CDR,
+    TOKEN_CONS,
   };
   
   for (int i = 0; sources[i] != NULL; ++i) {
@@ -47,9 +66,14 @@ static void test_scanner_identifier(void)
     const char *sources[] = {
       "asdf", "snake_case", "a12", "+/", "kebab-case",
       "a->b", "<>", "  camelCase\t", "->>", "@", "&b",
+      "definenot", "unquote", "Lambda", "caar", "cdadr",
       NULL,
     };
-    int lengths[] = {4, 10, 3, 2, 10, 4, 2, 9, 3, 1, 2};
+    int lengths[] = {
+      4, 10, 3, 2, 10,
+      4, 2, 9, 3, 1, 2,
+      9, 7, 6, 4, 5,
+    };
 
     for (int i = 0; sources[i] != NULL; ++i) {
       struct scanner sc;

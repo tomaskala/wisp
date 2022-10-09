@@ -5,16 +5,20 @@
 #include "scanner.h"
 
 struct parser {
-  struct scanner *sc;
+  struct scanner *scanner;
   struct token prev;
   struct token curr;
   bool panic_mode;
   bool had_error;
 };
 
+struct compiler {
+  struct parser *parser;
+};
+
 static void parser_init(struct parser *p, struct scanner *sc)
 {
-  p->sc = sc;
+  p->scanner = sc;
   // TODO: Initialize prev & curr?
   p->panic_mode = false;
   p->had_error = false;
@@ -52,7 +56,7 @@ static void advance(struct parser *p)
   p->prev = p->curr;
 
   for (;;) {
-    p->curr = scanner_next(p->sc);
+    p->curr = scanner_next(p->scanner);
 
     if (p->curr.type != TOKEN_ERROR)
       break;
@@ -85,16 +89,32 @@ static bool match(struct parser *p, enum token_type type)
   return true;
 }
 
-void compiler_init(struct compiler *c)
+static void sexp(struct compiler *c)
 {
+  consume(c->parser, TOKEN_LEFT_PAREN, "Expect '('");
   // TODO
+  consume(c->parser, TOKEN_RIGHT_PAREN, "Expect ')'");
 }
 
-void compiler_run(struct compiler *c, const char *source)
+static void compiler_init(struct compiler *c, struct parser *p)
+{
+  c->parser = p;
+}
+
+// TODO: Initialize scanner, parser and compiler outside and make this
+// TODO: function a "method" of compiler?
+void compile(const char *source)
 {
   struct scanner sc;
   scanner_init(&sc, source);
 
   struct parser p;
   parser_init(&p, &sc);
+
+  struct compiler c;
+  compiler_init(&c, &p);
+
+  advance(&p);
+  while (!match(&p, TOKEN_EOF))
+    sexp(&c);
 }

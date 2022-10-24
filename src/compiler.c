@@ -126,20 +126,44 @@ static void number(struct compiler *c)
   emit_constant(c, NUM_VAL(value));
 }
 
+// TODO: Needs handling.
 static void quote(struct compiler *c)
 {
   emit_byte(c, OP_QUOTE);
 }
 
-static void sexp(struct compiler *);
-
-static void list(struct compiler *c)
+static bool is_primitive(struct parser *p)
 {
-  if (match(c->parser, TOKEN_RIGHT_PAREN)) {
-    emit_constant(c, NIL_VAL);
-    return;
-  }
+  return p->curr.type >= PRIMITIVE_START && p->curr.type <= PRIMITIVE_END;
+}
 
+static void define(struct compiler *c)
+{
+  // TODO
+}
+
+static void lambda(struct compiler *c)
+{
+  // TODO
+}
+
+static void cons(struct compiler *c)
+{
+  // TODO
+}
+
+static void car(struct compiler *c)
+{
+  // TODO
+}
+
+static void cdr(struct compiler *c)
+{
+  // TODO
+}
+
+static void primitive(struct compiler *c)
+{
   if (match(c->parser, TOKEN_DEFINE))
     // (define identifier expr)
     define(c);
@@ -155,20 +179,57 @@ static void list(struct compiler *c)
   else if (match(c->parser, TOKEN_CDR))
     // (cdr pair)
     cdr(c);
-  else {
-    // TODO: Process the first element as the function to be called,
-    // TODO: emit a function call
+  else
+    // Should never happen as long as all primitive tokens are between
+    // 'PRIMITIVE_START' and 'PRIMITIVE_END'.
+    error_at_current(c->parser, "Unknown primitive");
+}
 
-    while (!check(c->parser, TOKEN_RIGHT_PAREN)
-        && !check(c->parser, TOKEN_DOT))
-      sexp(c);
+static void sexp(struct compiler *);
 
-    if (match(c->parser, TOKEN_DOT)) {
-      // TODO: Emit dot and process an S-expression to be dotted
-    }
+static void call(struct compiler *c)
+{
+  // Compile the function being called.
+  sexp(c);
 
-    consume(c->parser, TOKEN_RIGHT_PAREN, "Expect ')' at the end of a list");
+  uint8_t opcode = OP_CALL;
+  uint8_t arg_count = 0;
+
+  // Compile the function arguments.
+  while (!check(c->parser, TOKEN_RIGHT_PAREN)
+      && !check(c->parser, TOKEN_DOT)) {
+    sexp(c);
+
+    if (arg_count == 255)
+      error(c->parser, "Can't have more than 255 arguments");
+
+    arg_count++;
   }
+
+  // Compile the optional dotted argument.
+  if (match(c->parser, TOKEN_DOT)) {
+    opcode = OP_DOT_CALL;
+    identifier(c);
+
+    if (arg_count == 255)
+      error(c->parser,
+          "Can't have more than 255 arguments, including the dotted one");
+
+    arg_count++;
+  }
+
+  consume(c->parser, TOKEN_RIGHT_PAREN, "Expect ')' at the end of a list");
+  emit_bytes(c, opcode, arg_count);
+}
+
+static void list(struct compiler *c)
+{
+  if (match(c->parser, TOKEN_RIGHT_PAREN))
+    emit_constant(c, NIL_VAL);
+  else if (is_primitive(c->parser))
+    primitive(c);
+  else
+    call(c);
 }
 
 static void sexp(struct compiler *c)

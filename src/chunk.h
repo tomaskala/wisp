@@ -10,6 +10,8 @@ enum opcode {
   OP_CONSTANT,
   OP_NIL,
   OP_QUOTE,
+  OP_CALL,
+  OP_DOT_CALL,
 };
 
 struct chunk {

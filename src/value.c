@@ -8,11 +8,11 @@ void value_array_init(struct value_array *array)
   array->values = NULL;
 }
 
-void value_array_write(struct value_array *array, value val)
+void value_array_write(struct value_array *array, Value val)
 {
   if (array->count >= array->capacity) {
     array->capacity = GROW_CAPACITY(array->capacity);
-    array->values = GROW_ARRAY(value, array->values, array->capacity);
+    array->values = GROW_ARRAY(Value, array->values, array->capacity);
   }
 
   array->values[array->count] = val;

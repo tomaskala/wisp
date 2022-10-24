@@ -6,6 +6,12 @@
 
 #include "value.h"
 
+enum opcode {
+  OP_CONSTANT,
+  OP_NIL,
+  OP_QUOTE,
+};
+
 struct chunk {
   size_t capacity;
   size_t count;
@@ -18,7 +24,7 @@ void chunk_init(struct chunk *);
 
 void chunk_write(struct chunk *, uint8_t, int);
 
-int chunk_add_constant(struct chunk *, value);
+int chunk_add_constant(struct chunk *, Value);
 
 void chunk_free(struct chunk *);
 

@@ -164,5 +164,6 @@ struct token scanner_next(struct scanner *sc)
     return make_token(sc, TOKEN_DOT);
   }
 
+  // TODO: Emit the unexpected character value.
   return error_token(sc, "Unexpected character");
 }

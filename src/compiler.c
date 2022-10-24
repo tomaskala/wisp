@@ -1,13 +1,17 @@
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
+#include "chunk.h"
 #include "compiler.h"
 #include "scanner.h"
+#include "value.h"
 
 struct parser {
   struct scanner *scanner;
-  struct token prev;
-  struct token curr;
+  struct token prev;  // The last consumed token.
+  struct token curr;  // The currently looked at but yet unconsumed token.
   bool panic_mode;
   bool had_error;
 };
@@ -89,6 +93,28 @@ static bool match(struct parser *p, enum token_type type)
   return true;
 }
 
+static void emit_byte(struct compiler *c, uint8_t byte)
+{
+  // TODO
+}
+
+static void emit_bytes(struct compiler *c, uint8_t byte1, uint8_t byte2)
+{
+  emit_byte(c, byte1);
+  emit_byte(c, byte2);
+}
+
+static uint8_t make_constant(struct compiler *c, Value v)
+{
+  // TODO
+  return (uint8_t) 0;
+}
+
+static void emit_constant(struct compiler *c, Value v)
+{
+  emit_bytes(c, OP_CONSTANT, make_constant(c, v));
+}
+
 static void identifier(struct compiler *c)
 {
   // TODO: Emit identifier
@@ -97,33 +123,52 @@ static void identifier(struct compiler *c)
 static void number(struct compiler *c)
 {
   double value = strtod(c->parser->prev.start, NULL);
-  // TODO: Emit a number constant
+  emit_constant(c, NUM_VAL(value));
 }
 
 static void quote(struct compiler *c)
 {
-  // TODO: Emit quote and process an S-expression to be quoted
-  // TODO: Identifiers and lists need special treatment
+  emit_byte(c, OP_QUOTE);
 }
+
+static void sexp(struct compiler *);
 
 static void list(struct compiler *c)
 {
   if (match(c->parser, TOKEN_RIGHT_PAREN)) {
-    // TODO: Emit nil
+    emit_constant(c, NIL_VAL);
     return;
   }
 
-  // TODO: Process the first element as the function to be called,
-  // TODO: emit a function call
+  if (match(c->parser, TOKEN_DEFINE))
+    // (define identifier expr)
+    define(c);
+  else if (match(c->parser, TOKEN_LAMBDA))
+    // (lambda identifier|list expr)
+    lambda(c);
+  else if (match(c->parser, TOKEN_CONS))
+    // (cons expr1 expr2)
+    cons(c);
+  else if (match(c->parser, TOKEN_CAR))
+    // (car pair)
+    car(c);
+  else if (match(c->parser, TOKEN_CDR))
+    // (cdr pair)
+    cdr(c);
+  else {
+    // TODO: Process the first element as the function to be called,
+    // TODO: emit a function call
 
-  while (!check(c->parser, TOKEN_RIGHT_PAREN) && !check(c->parser, TOKEN_DOT))
-    sexp(c);
+    while (!check(c->parser, TOKEN_RIGHT_PAREN)
+        && !check(c->parser, TOKEN_DOT))
+      sexp(c);
 
-  if (match(c->parser, TOKEN_DOT)) {
-    // TODO: Emit dot and process an S-expression to be dotted
+    if (match(c->parser, TOKEN_DOT)) {
+      // TODO: Emit dot and process an S-expression to be dotted
+    }
+
+    consume(c->parser, TOKEN_RIGHT_PAREN, "Expect ')' at the end of a list");
   }
-
-  consume(TOKEN_RIGHT_PAREN, "Expect ')' at the end of a list");
 }
 
 static void sexp(struct compiler *c)

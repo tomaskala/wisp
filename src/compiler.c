@@ -137,55 +137,54 @@ static bool is_primitive(struct parser *p)
   return p->curr.type >= PRIMITIVE_START && p->curr.type <= PRIMITIVE_END;
 }
 
+static void sexp(struct compiler *);
+
 static void define(struct compiler *c)
 {
-  // TODO
+  // TODO: (define identifier expr)
 }
 
 static void lambda(struct compiler *c)
 {
-  // TODO
+  // TODO: (lambda identifier|list expr)
 }
 
 static void cons(struct compiler *c)
 {
-  // TODO
+  sexp(c);  // a
+  sexp(c);  // b
+  emit_byte(c, OP_CONS);  // (cons a b)
 }
 
 static void car(struct compiler *c)
 {
-  // TODO
+  sexp(c);  // a
+  emit_byte(c, OP_CAR);  // (car a)
 }
 
 static void cdr(struct compiler *c)
 {
-  // TODO
+  sexp(c);  // a
+  emit_byte(c, OP_CDR);  // (cdr a)
 }
 
 static void primitive(struct compiler *c)
 {
   if (match(c->parser, TOKEN_DEFINE))
-    // (define identifier expr)
     define(c);
   else if (match(c->parser, TOKEN_LAMBDA))
-    // (lambda identifier|list expr)
     lambda(c);
   else if (match(c->parser, TOKEN_CONS))
-    // (cons expr1 expr2)
     cons(c);
   else if (match(c->parser, TOKEN_CAR))
-    // (car pair)
     car(c);
   else if (match(c->parser, TOKEN_CDR))
-    // (cdr pair)
     cdr(c);
   else
     // Should never happen as long as all primitive tokens are between
     // 'PRIMITIVE_START' and 'PRIMITIVE_END'.
     error_at_current(c->parser, "Unknown primitive");
 }
-
-static void sexp(struct compiler *);
 
 static void call(struct compiler *c)
 {

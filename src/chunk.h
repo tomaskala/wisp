@@ -12,6 +12,9 @@ enum opcode {
   OP_QUOTE,
   OP_CALL,
   OP_DOT_CALL,
+  OP_CONS,
+  OP_CAR,
+  OP_CDR,
 };
 
 struct chunk {

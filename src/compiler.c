@@ -89,11 +89,55 @@ static bool match(struct parser *p, enum token_type type)
   return true;
 }
 
+static void identifier(struct compiler *c)
+{
+  // TODO: Emit identifier
+}
+
+static void number(struct compiler *c)
+{
+  double value = strtod(c->parser->prev.start, NULL);
+  // TODO: Emit a number constant
+}
+
+static void quote(struct compiler *c)
+{
+  // TODO: Emit quote and process an S-expression to be quoted
+  // TODO: Identifiers and lists need special treatment
+}
+
+static void list(struct compiler *c)
+{
+  if (match(c->parser, TOKEN_RIGHT_PAREN)) {
+    // TODO: Emit nil
+    return;
+  }
+
+  // TODO: Process the first element as the function to be called,
+  // TODO: emit a function call
+
+  while (!check(c->parser, TOKEN_RIGHT_PAREN) && !check(c->parser, TOKEN_DOT))
+    sexp(c);
+
+  if (match(c->parser, TOKEN_DOT)) {
+    // TODO: Emit dot and process an S-expression to be dotted
+  }
+
+  consume(TOKEN_RIGHT_PAREN, "Expect ')' at the end of a list");
+}
+
 static void sexp(struct compiler *c)
 {
-  consume(c->parser, TOKEN_LEFT_PAREN, "Expect '('");
-  // TODO
-  consume(c->parser, TOKEN_RIGHT_PAREN, "Expect ')'");
+  if (match(c->parser, TOKEN_IDENTIFIER))
+    identifier(c);
+  else if (match(c->parser, TOKEN_NUMBER))
+    number(c);
+  else if (match(c->parser, TOKEN_QUOTE))
+    quote(c);
+  else if (match(c->parser, TOKEN_LEFT_PAREN))
+    list(c);
+  else
+    error_at_current(c->parser, "Unexpected token");
 }
 
 static void compiler_init(struct compiler *c, struct parser *p)

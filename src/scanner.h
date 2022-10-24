@@ -5,7 +5,7 @@ enum token_type {
   // Single-character tokens.
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_DOT,
 
-  // Built-ins.
+  // Primitives.
   TOKEN_DEFINE, TOKEN_LAMBDA, TOKEN_QUOTE,
   TOKEN_CONS, TOKEN_CAR, TOKEN_CDR,
 

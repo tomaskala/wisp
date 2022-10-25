@@ -219,7 +219,6 @@ static void call(struct compiler *c)
     arg_count++;
   }
 
-  consume(c->parser, TOKEN_RIGHT_PAREN, "Expect ')' at the end of a list");
   emit_bytes(c, opcode, arg_count);
 }
 
@@ -231,6 +230,8 @@ static void list(struct compiler *c)
     primitive(c);
   else
     call(c);
+
+  consume(c->parser, TOKEN_RIGHT_PAREN, "Expect ')' at the end of a list");
 }
 
 static void sexp(struct compiler *c)

@@ -1,5 +1,5 @@
-#ifndef LISP_VALUE_H
-#define LISP_VALUE_H
+#ifndef WISP_VALUE_H
+#define WISP_VALUE_H
 
 #include <stdlib.h>
 

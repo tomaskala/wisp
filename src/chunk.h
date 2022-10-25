@@ -1,5 +1,5 @@
-#ifndef LISP_CHUNK_H
-#define LISP_CHUNK_H
+#ifndef WISP_CHUNK_H
+#define WISP_CHUNK_H
 
 #include <stdint.h>
 #include <stdlib.h>

@@ -3,7 +3,7 @@
 
 #include "scanner.h"
 
-#define PROGRAM_NAME "lisp"
+#define PROGRAM_NAME "wisp"
 
 #define EXIT_USAGE_ERROR 64
 #define EXIT_DATA_ERROR 65

@@ -17,7 +17,7 @@ DBGOBJS    = src/main.dbg.o $(SRCS:.c=.dbg.o)
 DBGCFLAGS  = -Og -g -fsanitize=address -fsanitize=leak -fsanitize=undefined
 DBGLDFLAGS = -fsanitize=address -fsanitize=leak -fsanitize=undefined
 
-RELEXE     = lisp
+RELEXE     = wisp
 RELOBJS    = src/main.o $(SRCS:.c=.o)
 RELCFLAGS  = -O3
 RELLDFLAGS =

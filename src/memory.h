@@ -1,5 +1,5 @@
-#ifndef LISP_MEMORY_H
-#define LISP_MEMORY_H
+#ifndef WISP_MEMORY_H
+#define WISP_MEMORY_H
 
 #include <stdlib.h>
 

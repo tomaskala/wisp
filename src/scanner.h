@@ -1,5 +1,5 @@
-#ifndef LISP_SCANNER_H
-#define LISP_SCANNER_H
+#ifndef WISP_SCANNER_H
+#define WISP_SCANNER_H
 
 enum token_type {
   // Single-character tokens.

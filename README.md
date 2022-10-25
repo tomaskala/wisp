@@ -1,3 +1,3 @@
-# Lisp
+# Wisp
 
-A Lisp implementation.
+A Lisp implementation called Wisp.

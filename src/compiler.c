@@ -205,10 +205,12 @@ static void call(struct compiler *c)
     arg_count++;
   }
 
-  // Compile the optional dotted argument.
+  // Compile the optional dotted argument, which, for a function call,
+  // must be a quoted list (or an identifier associated with one).
+  // TODO: Compile error for different S-expressions?
   if (match(c->parser, TOKEN_DOT)) {
     opcode = OP_DOT_CALL;
-    identifier(c);
+    sexp(c);
 
     if (arg_count == 255)
       error(c->parser,

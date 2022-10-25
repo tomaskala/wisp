@@ -15,6 +15,7 @@ enum opcode {
   OP_CONS,
   OP_CAR,
   OP_CDR,
+  OP_DEFINE_GLOBAL,
 };
 
 struct chunk {

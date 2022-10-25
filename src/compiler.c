@@ -137,11 +137,30 @@ static bool is_primitive(struct parser *p)
   return p->curr.type >= PRIMITIVE_START && p->curr.type <= PRIMITIVE_END;
 }
 
+static uint8_t identifier_constant(struct compiler *c)
+{
+  // TODO: Add c->parser.prev as an atom constant
+  return (uint8_t) 0;
+}
+
+static uint8_t read_identifier(struct compiler *c, const char *msg)
+{
+  consume(c->parser, TOKEN_IDENTIFIER, msg);
+  return identifier_constant(c);
+}
+
+static void define_variable(struct compiler *c, uint8_t global)
+{
+  emit_bytes(c, OP_DEFINE_GLOBAL, global);
+}
+
 static void sexp(struct compiler *);
 
 static void define(struct compiler *c)
 {
-  // TODO: (define identifier expr)
+  uint8_t global = read_identifier(c, "Expect identifier after 'define'"); // a
+  sexp(c);  // b
+  define_variable(c, global);  // (define a b)
 }
 
 static void lambda(struct compiler *c)

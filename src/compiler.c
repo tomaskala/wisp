@@ -5,6 +5,7 @@
 
 #include "chunk.h"
 #include "compiler.h"
+#include "object.h"
 #include "scanner.h"
 #include "value.h"
 
@@ -16,8 +17,15 @@ struct parser {
   bool had_error;
 };
 
+enum function_type {
+  TYPE_LAMBDA,
+  TYPE_SCRIPT,
+};
+
 struct compiler {
   struct parser *parser;
+  struct obj_lambda *lambda;
+  enum function_type type;
 };
 
 static void parser_init(struct parser *p, struct scanner *sc)
@@ -26,6 +34,16 @@ static void parser_init(struct parser *p, struct scanner *sc)
   // TODO: Initialize prev & curr?
   p->panic_mode = false;
   p->had_error = false;
+}
+
+static void compiler_init(struct compiler *c, struct parser *p,
+    enum function_type type)
+{
+  c->parser = p;
+  c->lambda = NULL;
+  c->type = type;
+
+  c->lambda = new_lambda();
 }
 
 static void error_at(struct parser *p, struct token tok, const char *msg)
@@ -163,9 +181,58 @@ static void define(struct compiler *c)
   define_variable(c, global);  // (define a b)
 }
 
+/*
+ * TODO
+ * ((lambda (x y) (list x y)) 1 2) -> (1 2)
+ * ((lambda (x y) (list x y)) . '(1 2)) -> (1 2)
+ * ((lambda (x y) (list x y)) 1 . '(2)) -> (1 2)
+ *
+ * ((lambda (x y . z) (list x y z)) 1 2 3) -> (1 2 (3))
+ * ((lambda (x y . z) (list x y z)) . '(1 2 3)) -> (1 2 (3))
+ * ((lambda (x y . z) (list x y z)) 1 2 . '(3)) -> (1 2 (3))
+ */
 static void lambda(struct compiler *c)
 {
-  // TODO: (lambda identifier|list expr)
+  struct compiler inner;
+  compiler_init(&inner, c->parser, TYPE_LAMBDA);
+
+  // TODO: Scope depth is missing, notably in 'define_variable'.
+  if (match(inner.parser, TOKEN_LEFT_PAREN)) {
+    // (lambda (p1 p2 ... pn) expr) or (lambda (p1 p2 ... pn . params) expr)
+    while (!check(inner.parser, TOKEN_RIGHT_PAREN)
+        && !check(inner.parser, TOKEN_DOT)
+        && !check(inner.parser, TOKEN_EOF)) {
+      inner.lambda->arity++;
+
+      // TODO: Currently, this allows 255 parameters and 1 parameter list,
+      // TODO: but function calls allow 255 parameters, including the parameter
+      // TODO: list.
+      if (inner.lambda->arity > 255)
+        error_at_current(inner.parser, "Can't have more than 255 parameters");
+
+      uint8_t constant = read_identifier(&inner, "Expect parameter name");
+      define_variable(&inner, constant);
+    }
+
+    if (match(inner.parser, TOKEN_DOT)) {
+      // (lambda (p1 p2 ... pn . params) expr)
+      uint8_t constant = read_identifier(&inner, "Expect parameter list name");
+      define_variable(&inner, constant);
+      inner.lambda->has_param_list = true;
+    }
+
+    consume(inner.parser, TOKEN_RIGHT_PAREN,
+        "Expect ')' at the end of a parameter list");
+  } else {
+    // (lambda params expr), equivalent to (lambda ( . params) expr)
+    uint8_t constant = read_identifier(&inner, "Expect parameter list name");
+    define_variable(&inner, constant);
+    inner.lambda->has_param_list = true;
+  }
+
+  sexp(&inner);
+
+  // TODO: Emit bytecode.
 }
 
 static void cons(struct compiler *c)
@@ -215,7 +282,8 @@ static void call(struct compiler *c)
 
   // Compile the function arguments.
   while (!check(c->parser, TOKEN_RIGHT_PAREN)
-      && !check(c->parser, TOKEN_DOT)) {
+      && !check(c->parser, TOKEN_DOT)
+      && !check(c->parser, TOKEN_EOF)) {
     sexp(c);
 
     if (arg_count == 255)
@@ -267,11 +335,6 @@ static void sexp(struct compiler *c)
     error_at_current(c->parser, "Unexpected token");
 }
 
-static void compiler_init(struct compiler *c, struct parser *p)
-{
-  c->parser = p;
-}
-
 // TODO: Initialize scanner, parser and compiler outside and make this
 // TODO: function a "method" of compiler?
 void compile(const char *source)
@@ -283,7 +346,7 @@ void compile(const char *source)
   parser_init(&p, &sc);
 
   struct compiler c;
-  compiler_init(&c, &p);
+  compiler_init(&c, &p, TYPE_SCRIPT);
 
   advance(&p);
   while (!match(&p, TOKEN_EOF))

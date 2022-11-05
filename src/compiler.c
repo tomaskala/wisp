@@ -37,6 +37,7 @@ struct upvalue {
 };
 
 struct compiler {
+  struct compiler *enclosing;
   struct parser *parser;
   struct obj_lambda *lambda;
   enum function_type type;
@@ -54,9 +55,10 @@ static void parser_init(struct parser *p, struct scanner *sc)
   p->had_error = false;
 }
 
-static void compiler_init(struct compiler *c, struct parser *p,
-    enum function_type type)
+static void compiler_init(struct compiler *c, struct compiler *enclosing,
+    struct parser *p, enum function_type type)
 {
+  c->enclosing = enclosing;
   c->parser = p;
   c->lambda = NULL;
   c->type = type;
@@ -152,31 +154,14 @@ static void emit_constant(struct compiler *c, Value v)
   emit_bytes(c, OP_CONSTANT, make_constant(c, v));
 }
 
-static void identifier(struct compiler *c)
-{
-  // TODO: Emit identifier
-}
-
-static void number(struct compiler *c)
-{
-  double value = strtod(c->parser->prev.start, NULL);
-  emit_constant(c, NUM_VAL(value));
-}
-
-// TODO: Needs handling.
-static void quote(struct compiler *c)
-{
-  emit_byte(c, OP_QUOTE);
-}
-
 static bool is_primitive(struct parser *p)
 {
   return p->curr.type >= PRIMITIVE_START && p->curr.type <= PRIMITIVE_END;
 }
 
-static uint8_t identifier_constant(struct compiler *c)
+static uint8_t identifier_constant(struct compiler *c, struct token *name)
 {
-  // TODO: Add c->parser.prev as an atom constant
+  // TODO: Add name as an atom constant
   return (uint8_t) 0;
 }
 
@@ -243,7 +228,7 @@ static uint8_t read_identifier(struct compiler *c, const char *msg)
   if (c->scope_depth > 0)
     return 0;
 
-  return identifier_constant(c);
+  return identifier_constant(c, &c->parser->prev);
 }
 
 static void sexp(struct compiler *);
@@ -268,7 +253,7 @@ static void define(struct compiler *c)
 static void lambda(struct compiler *c)
 {
   struct compiler inner;
-  compiler_init(&inner, c->parser, TYPE_LAMBDA);
+  compiler_init(&inner, c, c->parser, TYPE_LAMBDA);
   scope_begin(&inner);
 
   if (match(inner.parser, TOKEN_LEFT_PAREN)) {
@@ -381,6 +366,100 @@ static void call(struct compiler *c)
   emit_bytes(c, opcode, arg_count);
 }
 
+static int resolve_local(struct compiler *c, struct token *name)
+{
+  for (int i = c->local_count - 1; i >= 0; --i) {
+    struct local *local = &c->locals[i];
+    if (identifiers_equal(name, &local->name)) {
+      if (local->depth == -1)
+        error(c->parser, "Can't read a variable in its own initializer");
+
+      return i;
+    }
+  }
+
+  return -1;
+}
+
+static int add_upvalue(struct compiler *c, uint8_t index, bool is_local)
+{
+  int upvalue_count = c->lambda->upvalue_count;
+
+  for (int i = 0; i < upvalue_count; ++i) {
+    struct upvalue *upvalue = &c->upvalues[i];
+
+    if (upvalue->index == index && upvalue->is_local == is_local)
+      // An upvalue closing over the variable already exists, reuse it.
+      return i;
+  }
+
+  if (upvalue_count == UINT8_COUNT) {
+    error(c->parser, "Too many closure variables in function");
+    return 0;
+  }
+
+  c->upvalues[upvalue_count].is_local = is_local;
+  c->upvalues[upvalue_count].index = index;
+  return c->lambda->upvalue_count++;
+}
+
+static int resolve_upvalue(struct compiler *c, struct token *name)
+{
+  // The function is called after attempting to resolve the variable in
+  // the current function scope, so we start at the enclosing compiler.
+  if (c->enclosing == NULL)
+    // Reached the outermost function without finding a local variable, so it
+    // must be global (or undefined).
+    return -1;
+
+  int local = resolve_local(c->enclosing, name);
+  if (local != -1) {
+    // Found the variable as local in the enclosing compiler.
+    c->enclosing->locals[local].is_captured = true;
+    return add_upvalue(c, (uint8_t) local, true);
+  }
+
+  int upvalue = resolve_upvalue(c->enclosing, name);
+  if (upvalue != -1)
+    // Found the variable as local in a non-directly enclosing compiler.
+    return add_upvalue(c, (uint8_t) upvalue, false);
+
+  return -1;
+}
+
+static void identifier(struct compiler *c)
+{
+  uint8_t get_op;
+  struct token *name = &c->parser->prev;
+  int arg = resolve_local(c, name);
+
+  if (arg != -1)
+    // Local scope.
+    get_op = OP_GET_LOCAL;
+  else if ((arg = resolve_upvalue(c, name)) != -1)
+    // Outer scope.
+    get_op = OP_GET_UPVALUE;
+  else {
+    // Global scope.
+    arg = identifier_constant(c, name);
+    get_op = OP_GET_GLOBAL;
+  }
+
+  emit_bytes(c, get_op, (uint8_t) arg);
+}
+
+static void number(struct compiler *c)
+{
+  double value = strtod(c->parser->prev.start, NULL);
+  emit_constant(c, NUM_VAL(value));
+}
+
+// TODO: Needs handling.
+static void quote(struct compiler *c)
+{
+  emit_byte(c, OP_QUOTE);
+}
+
 static void list(struct compiler *c)
 {
   if (match(c->parser, TOKEN_RIGHT_PAREN))
@@ -409,6 +488,12 @@ static void sexp(struct compiler *c)
 
 // TODO: Initialize scanner, parser and compiler outside and make this
 // TODO: function a "method" of compiler?
+//
+// TODO: Synchronize the parser.
+//
+// TODO: Return "statement"
+//
+// TODO: Upvalue closing
 void compile(const char *source)
 {
   struct scanner sc;
@@ -418,7 +503,7 @@ void compile(const char *source)
   parser_init(&p, &sc);
 
   struct compiler c;
-  compiler_init(&c, &p, TYPE_SCRIPT);
+  compiler_init(&c, NULL, &p, TYPE_SCRIPT);
 
   advance(&p);
   while (!match(&p, TOKEN_EOF))

@@ -17,6 +17,9 @@ enum opcode {
   OP_CDR,
   OP_DEFINE_GLOBAL,
   OP_CLOSURE,
+  OP_GET_LOCAL,
+  OP_GET_UPVALUE,
+  OP_GET_GLOBAL,
 };
 
 struct chunk {

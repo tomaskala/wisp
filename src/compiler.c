@@ -134,7 +134,7 @@ static bool match(struct parser *p, enum token_type type)
 
 static void emit_byte(struct compiler *c, uint8_t byte)
 {
-  // TODO
+  chunk_write(&c->lambda->chunk, byte, c->parser->prev.line);
 }
 
 static void emit_bytes(struct compiler *c, uint8_t byte1, uint8_t byte2)
@@ -145,8 +145,14 @@ static void emit_bytes(struct compiler *c, uint8_t byte1, uint8_t byte2)
 
 static uint8_t make_constant(struct compiler *c, Value v)
 {
-  // TODO
-  return (uint8_t) 0;
+  int constant = chunk_add_constant(&c->lambda->chunk, v);
+
+  if (constant > UINT8_MAX) {
+    error(c->parser, "Too many constants in one chunk");
+    return 0;
+  }
+
+  return (uint8_t) constant;
 }
 
 static void emit_constant(struct compiler *c, Value v)
@@ -494,6 +500,8 @@ static void sexp(struct compiler *c)
 // TODO: Return "statement"
 //
 // TODO: Upvalue closing
+//
+// TODO: Replace 255 with UINT8_MAX
 void compile(const char *source)
 {
   struct scanner sc;

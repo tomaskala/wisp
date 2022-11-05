@@ -13,7 +13,7 @@ typedef struct {
   enum value_type type;
   union {
     double number;
-    struct object *obj;
+    struct obj *obj;
   } as;
 } Value;
 
@@ -26,7 +26,7 @@ typedef struct {
 
 #define NIL_VAL       ((Value) {VAL_NIL, {.number = 0}})
 #define NUM_VAL(n)    ((Value) {VAL_NUM, {.number = n}})
-#define OBJ_VAL(o)    ((Value) {VAL_OBJ, {.obj = (struct object *) o}})
+#define OBJ_VAL(o)    ((Value) {VAL_OBJ, {.obj = (struct obj *) o}})
 
 struct value_array {
   size_t capacity;

@@ -2,12 +2,15 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "chunk.h"
 #include "compiler.h"
 #include "object.h"
 #include "scanner.h"
 #include "value.h"
+
+#define UINT8_COUNT (UINT8_MAX + 1)
 
 struct parser {
   struct scanner *scanner;
@@ -22,10 +25,25 @@ enum function_type {
   TYPE_SCRIPT,
 };
 
+struct local {
+  struct token name;
+  int depth;
+  bool is_captured;
+};
+
+struct upvalue {
+  uint8_t index;
+  bool is_local;
+};
+
 struct compiler {
   struct parser *parser;
   struct obj_lambda *lambda;
   enum function_type type;
+  struct local locals[UINT8_COUNT];
+  struct upvalue upvalues[UINT8_COUNT];
+  size_t local_count;
+  int scope_depth;
 };
 
 static void parser_init(struct parser *p, struct scanner *sc)
@@ -42,7 +60,8 @@ static void compiler_init(struct compiler *c, struct parser *p,
   c->parser = p;
   c->lambda = NULL;
   c->type = type;
-
+  c->local_count = 0;
+  c->scope_depth = 0;
   c->lambda = new_lambda();
 }
 
@@ -161,15 +180,70 @@ static uint8_t identifier_constant(struct compiler *c)
   return (uint8_t) 0;
 }
 
-static uint8_t read_identifier(struct compiler *c, const char *msg)
+static bool identifiers_equal(struct token *a, struct token *b)
 {
-  consume(c->parser, TOKEN_IDENTIFIER, msg);
-  return identifier_constant(c);
+  return a->length == b->length && memcmp(a->start, b->start, a->length) == 0;
+}
+
+static void scope_begin(struct compiler *c)
+{
+  c->scope_depth++;
+}
+
+static void add_local(struct compiler *c, struct token name)
+{
+  if (c->local_count == UINT8_COUNT) {
+    error(c->parser, "Too many local variables in this function");
+    return;
+  }
+
+  struct local *local = &c->locals[c->local_count++];
+  local->name = name;
+  local->depth = -1;
+  local->is_captured = false;
+}
+
+static void declare_variable(struct compiler *c)
+{
+  if (c->scope_depth == 0)
+    // Global scope.
+    return;
+
+  struct token *name = &c->parser->prev;
+
+  for (int i = c->local_count - 1; i >= 0; --i) {
+    struct local *local = &c->locals[i];
+
+    if (local->depth != -1 && local->depth < c->scope_depth)
+      break;
+
+    if (identifiers_equal(name, &local->name))
+      error(c->parser, "Already a variable with this name in this scope");
+  }
+
+  add_local(c, *name);
 }
 
 static void define_variable(struct compiler *c, uint8_t global)
 {
+  if (c->scope_depth > 0) {
+    // Local scope.
+    c->locals[c->local_count - 1].depth = c->scope_depth;
+    return;
+  }
+
   emit_bytes(c, OP_DEFINE_GLOBAL, global);
+}
+
+static uint8_t read_identifier(struct compiler *c, const char *msg)
+{
+  consume(c->parser, TOKEN_IDENTIFIER, msg);
+  declare_variable(c);
+
+  if (c->scope_depth > 0)
+    return 0;
+
+  return identifier_constant(c);
 }
 
 static void sexp(struct compiler *);
@@ -195,8 +269,8 @@ static void lambda(struct compiler *c)
 {
   struct compiler inner;
   compiler_init(&inner, c->parser, TYPE_LAMBDA);
+  scope_begin(&inner);
 
-  // TODO: Scope depth is missing, notably in 'define_variable'.
   if (match(inner.parser, TOKEN_LEFT_PAREN)) {
     // (lambda (p1 p2 ... pn) expr) or (lambda (p1 p2 ... pn . params) expr)
     while (!check(inner.parser, TOKEN_RIGHT_PAREN)
@@ -204,9 +278,6 @@ static void lambda(struct compiler *c)
         && !check(inner.parser, TOKEN_EOF)) {
       inner.lambda->arity++;
 
-      // TODO: Currently, this allows 255 parameters and 1 parameter list,
-      // TODO: but function calls allow 255 parameters, including the parameter
-      // TODO: list.
       if (inner.lambda->arity > 255)
         error_at_current(inner.parser, "Can't have more than 255 parameters");
 
@@ -230,9 +301,16 @@ static void lambda(struct compiler *c)
     inner.lambda->has_param_list = true;
   }
 
+  // Compile function body.
   sexp(&inner);
 
-  // TODO: Emit bytecode.
+  struct obj_lambda *lambda = inner.lambda;
+  emit_bytes(&inner, OP_CLOSURE, make_constant(&inner, OBJ_VAL(lambda)));
+
+  for (int i = 0; i < lambda->upvalue_count; ++i) {
+    emit_byte(&inner, inner.upvalues[i].is_local ? 1 : 0);
+    emit_byte(&inner, inner.upvalues[i].index);
+  }
 }
 
 static void cons(struct compiler *c)
@@ -298,12 +376,6 @@ static void call(struct compiler *c)
   if (match(c->parser, TOKEN_DOT)) {
     opcode = OP_DOT_CALL;
     sexp(c);
-
-    if (arg_count == 255)
-      error(c->parser,
-          "Can't have more than 255 arguments, including the dotted one");
-
-    arg_count++;
   }
 
   emit_bytes(c, opcode, arg_count);

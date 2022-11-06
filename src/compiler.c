@@ -315,8 +315,9 @@ static void lambda(struct compiler *c)
         && !check(inner.parser, TOKEN_EOF)) {
       inner.lambda->arity++;
 
-      if (inner.lambda->arity > 255)
-        error_at_current(inner.parser, "Can't have more than 255 parameters");
+      if (inner.lambda->arity > UINT8_MAX)
+        error_at_current(inner.parser,
+            "Can't have more than " XSTR(UINT8_MAX) " parameters");
 
       uint8_t constant = read_identifier(&inner, "Expect parameter name");
       define_variable(&inner, constant);
@@ -406,8 +407,8 @@ static void call(struct compiler *c)
       && !check(c->parser, TOKEN_EOF)) {
     sexp(c, false);
 
-    if (arg_count == 255)
-      error(c->parser, "Can't have more than 255 arguments");
+    if (arg_count == UINT8_MAX)
+      error(c->parser, "Can't have more than " XSTR(UINT8_MAX) " arguments");
 
     arg_count++;
   }
@@ -583,8 +584,6 @@ static void sexp(struct compiler *c, bool quoted)
 
 // TODO: Initialize scanner, parser and compiler outside and make this
 // TODO: function a "method" of compiler?
-//
-// TODO: Replace 255 with UINT8_MAX
 void compile(const char *source)
 {
   struct scanner sc;

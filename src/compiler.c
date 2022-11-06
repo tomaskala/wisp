@@ -13,37 +13,74 @@
 #define UINT8_COUNT (UINT8_MAX + 1)
 
 struct parser {
+  // Fetches tokens from the parsed string.
   struct scanner *scanner;
-  struct token prev;  // The last consumed token.
-  struct token curr;  // The currently looked at but yet unconsumed token.
+  
+  // The last consumed token.
+  struct token prev;
+
+  // The currently looked at but yet unconsumed token.
+  struct token curr;
+
+  // Is the parser currently in an error state?
   bool panic_mode;
+
+  // Was there a parse error?
   bool had_error;
 };
 
 enum function_type {
+  // Currently compiling a lambda.
   TYPE_LAMBDA,
+
+  // Currently compiling the global scope.
   TYPE_SCRIPT,
 };
 
 struct local {
+  // Token holding the local variable name.
   struct token name;
+
+  // Depth of the scope the local is defined in.
   int depth;
+
+  // Is the local captured by any nested function declaration?
   bool is_captured;
 };
 
 struct upvalue {
+  // Index of the variable the upvalue closes over in the surrounding compiler
+  // locals array (is_local == true) or upvalues array (is_local == false).
   uint8_t index;
+
+  // Does the upvalue close over a local variable in the surrounding scope or
+  // over another upvalue?
   bool is_local;
 };
 
 struct compiler {
+  // The immediately surrounding compiler (or NULL if in global scope).
   struct compiler *enclosing;
+
+  // Parser object shared between all compilers.
   struct parser *parser;
+
+  // Currently compiled lambda (or NULL if in global scope).
   struct obj_lambda *lambda;
+
+  // Type of the currently compiled lambda.
   enum function_type type;
+
+  // Local variables defined in the currently compiled lambda.
   struct local locals[UINT8_COUNT];
+
+  // Upvalues defined in the currently compiled lambda.
   struct upvalue upvalues[UINT8_COUNT];
+
+  // Number of local variables defined in the currently compiled lambda.
   size_t local_count;
+
+  // How many scopes away from the global scope (=0).
   int scope_depth;
 };
 
@@ -214,6 +251,7 @@ static void declare_variable(struct compiler *c)
 
   struct token *name = &c->parser->prev;
 
+  // Check whether a variable with this name already exists in the scope.
   for (int i = c->local_count - 1; i >= 0; --i) {
     struct local *local = &c->locals[i];
 

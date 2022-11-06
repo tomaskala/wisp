@@ -21,15 +21,27 @@ enum token_type {
 };
 
 struct token {
+  // Type of the token.
   enum token_type type;
+
+  // Start of the token.
   const char *start;
+
+  // Length of the token.
   int length;
+
+  // Number of the line the token appears in.
   int line;
 };
 
 struct scanner {
+  // Start of the currently scanned token.
   const char *start;
+
+  // Current position in the buffer.
   const char *current;
+
+  // Currently scanned line.
   int line;
 };
 

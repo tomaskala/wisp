@@ -1,9 +1,8 @@
 #ifndef WISP_OBJECT_H
 #define WISP_OBJECT_H
 
-#include <stdbool.h>
-
 #include "chunk.h"
+#include "common.h"
 
 enum obj_type {
   OBJ_LAMBDA,

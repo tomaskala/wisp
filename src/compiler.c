@@ -1,5 +1,3 @@
-#include <stdbool.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,8 +7,6 @@
 #include "object.h"
 #include "scanner.h"
 #include "value.h"
-
-#define UINT8_COUNT (UINT8_MAX + 1)
 
 struct parser {
   // Fetches tokens from the parsed string.

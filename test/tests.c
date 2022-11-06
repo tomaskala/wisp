@@ -1,7 +1,7 @@
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "../src/common.h"
 #include "../src/scanner.h"
 
 static int count_fail = 0;

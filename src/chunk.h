@@ -1,9 +1,9 @@
 #ifndef WISP_CHUNK_H
 #define WISP_CHUNK_H
 
-#include <stdint.h>
 #include <stdlib.h>
 
+#include "common.h"
 #include "value.h"
 
 enum opcode {

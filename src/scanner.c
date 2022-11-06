@@ -1,6 +1,6 @@
-#include <stdbool.h>
 #include <string.h>
 
+#include "common.h"
 #include "scanner.h"
 
 void scanner_init(struct scanner *sc, const char *source)

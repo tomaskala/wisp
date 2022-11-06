@@ -165,6 +165,18 @@ static bool is_primitive(struct parser *p)
   return p->curr.type >= PRIMITIVE_START && p->curr.type <= PRIMITIVE_END;
 }
 
+static void synchronize(struct parser *p)
+{
+  p->panic_mode = false;
+
+  while (p->curr.type != TOKEN_EOF) {
+    if (p->prev.type == TOKEN_RIGHT_PAREN || is_primitive(p))
+      return;
+
+    advance(p);
+  }
+}
+
 static uint8_t identifier_constant(struct compiler *c, struct token *name)
 {
   // TODO: Add name as an atom constant
@@ -490,12 +502,13 @@ static void sexp(struct compiler *c)
     list(c);
   else
     error_at_current(c->parser, "Unexpected token");
+
+  if (c->parser->panic_mode)
+    synchronize(c->parser);
 }
 
 // TODO: Initialize scanner, parser and compiler outside and make this
 // TODO: function a "method" of compiler?
-//
-// TODO: Synchronize the parser.
 //
 // TODO: Return "statement"
 //

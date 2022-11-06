@@ -199,7 +199,7 @@ static void emit_constant(struct compiler *c, Value v)
 
 static bool is_primitive(struct parser *p)
 {
-  return p->curr.type >= PRIMITIVE_START && p->curr.type <= PRIMITIVE_END;
+  return p->curr.type >= _PRIMITIVE_START && p->curr.type <= _PRIMITIVE_END;
 }
 
 static void synchronize(struct parser *p)
@@ -392,7 +392,7 @@ static void primitive(struct compiler *c)
     cdr(c);
   else
     // Should never happen as long as all primitive tokens are between
-    // 'PRIMITIVE_START' and 'PRIMITIVE_END'.
+    // '_PRIMITIVE_START' and '_PRIMITIVE_END'.
     error_at_current(c->parser, "Unknown primitive");
 }
 

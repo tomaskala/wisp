@@ -346,11 +346,11 @@ static void lambda(struct compiler *c)
   sexp(&inner);
 
   struct obj_lambda *lambda = inner.lambda;
-  emit_bytes(&inner, OP_CLOSURE, make_constant(&inner, OBJ_VAL(lambda)));
+  emit_bytes(&inner, OP_CLOSURE, make_constant(c, OBJ_VAL(lambda)));
 
   for (int i = 0; i < lambda->upvalue_count; ++i) {
-    emit_byte(&inner, inner.upvalues[i].is_local ? 1 : 0);
-    emit_byte(&inner, inner.upvalues[i].index);
+    emit_byte(c, inner.upvalues[i].is_local ? 1 : 0);
+    emit_byte(c, inner.upvalues[i].index);
   }
 }
 
@@ -549,8 +549,6 @@ static void sexp(struct compiler *c)
 // TODO: function a "method" of compiler?
 //
 // TODO: Return "statement"
-//
-// TODO: Upvalue closing
 //
 // TODO: Replace 255 with UINT8_MAX
 void compile(const char *source)

@@ -345,8 +345,13 @@ static void lambda(struct compiler *c)
   // Compile function body.
   sexp(&inner);
 
+  // Emit a return opcode.
+  emit_byte(&inner, OP_RETURN);
+
+  // At this point, the lambda is compiled and the 'inner' compiler done.
   struct obj_lambda *lambda = inner.lambda;
-  emit_bytes(&inner, OP_CLOSURE, make_constant(c, OBJ_VAL(lambda)));
+
+  emit_bytes(c, OP_CLOSURE, make_constant(c, OBJ_VAL(lambda)));
 
   for (int i = 0; i < lambda->upvalue_count; ++i) {
     emit_byte(c, inner.upvalues[i].is_local ? 1 : 0);
@@ -547,8 +552,6 @@ static void sexp(struct compiler *c)
 
 // TODO: Initialize scanner, parser and compiler outside and make this
 // TODO: function a "method" of compiler?
-//
-// TODO: Return "statement"
 //
 // TODO: Replace 255 with UINT8_MAX
 void compile(const char *source)

@@ -20,6 +20,7 @@ enum opcode {
   OP_GET_LOCAL,
   OP_GET_UPVALUE,
   OP_GET_GLOBAL,
+  OP_RETURN,
 };
 
 struct chunk {

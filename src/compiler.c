@@ -287,12 +287,12 @@ static uint8_t read_identifier(struct compiler *c, const char *msg)
   return identifier_constant(c, &c->parser->prev);
 }
 
-static void sexp(struct compiler *);
+static void sexp(struct compiler *, bool);
 
 static void define(struct compiler *c)
 {
   uint8_t global = read_identifier(c, "Expect identifier after 'define'"); // a
-  sexp(c);  // b
+  sexp(c, false);  // b
   define_variable(c, global);  // (define a b)
 }
 
@@ -343,7 +343,7 @@ static void lambda(struct compiler *c)
   }
 
   // Compile function body.
-  sexp(&inner);
+  sexp(&inner, false);
 
   // Emit a return opcode.
   emit_byte(&inner, OP_RETURN);
@@ -361,20 +361,20 @@ static void lambda(struct compiler *c)
 
 static void cons(struct compiler *c)
 {
-  sexp(c);  // a
-  sexp(c);  // b
+  sexp(c, false);  // a
+  sexp(c, false);  // b
   emit_byte(c, OP_CONS);  // (cons a b)
 }
 
 static void car(struct compiler *c)
 {
-  sexp(c);  // a
+  sexp(c, false);  // a
   emit_byte(c, OP_CAR);  // (car a)
 }
 
 static void cdr(struct compiler *c)
 {
-  sexp(c);  // a
+  sexp(c, false);  // a
   emit_byte(c, OP_CDR);  // (cdr a)
 }
 
@@ -399,7 +399,7 @@ static void primitive(struct compiler *c)
 static void call(struct compiler *c)
 {
   // Compile the function being called.
-  sexp(c);
+  sexp(c, false);
 
   uint8_t opcode = OP_CALL;
   uint8_t arg_count = 0;
@@ -408,7 +408,7 @@ static void call(struct compiler *c)
   while (!check(c->parser, TOKEN_RIGHT_PAREN)
       && !check(c->parser, TOKEN_DOT)
       && !check(c->parser, TOKEN_EOF)) {
-    sexp(c);
+    sexp(c, false);
 
     if (arg_count == 255)
       error(c->parser, "Can't have more than 255 arguments");
@@ -421,7 +421,7 @@ static void call(struct compiler *c)
   // TODO: Compile error for different S-expressions?
   if (match(c->parser, TOKEN_DOT)) {
     opcode = OP_DOT_CALL;
-    sexp(c);
+    sexp(c, false);
   }
 
   emit_bytes(c, opcode, arg_count);
@@ -488,6 +488,11 @@ static int resolve_upvalue(struct compiler *c, struct token *name)
   return -1;
 }
 
+static void atom(struct compiler *c)
+{
+  // TODO
+}
+
 static void identifier(struct compiler *c)
 {
   uint8_t get_op;
@@ -515,16 +520,40 @@ static void number(struct compiler *c)
   emit_constant(c, NUM_VAL(value));
 }
 
-// TODO: Needs handling.
-static void quote(struct compiler *c)
-{
-  emit_byte(c, OP_QUOTE);
-}
-
 static void list(struct compiler *c)
 {
-  if (match(c->parser, TOKEN_RIGHT_PAREN))
+  if (check(c->parser, TOKEN_RIGHT_PAREN))
+    // '() evaluates to nil.
     emit_constant(c, NIL_VAL);
+  else if (match(c->parser, TOKEN_DOT))
+    // '( . a) evaluates to a
+    sexp(c, true);
+  else {
+    int elements = 0;
+
+    while (!check(c->parser, TOKEN_RIGHT_PAREN)
+        && !check(c->parser, TOKEN_DOT)
+        && !check(c->parser, TOKEN_EOF)) {
+      sexp(c, true);
+      elements++;
+    }
+
+    if (match(c->parser, TOKEN_DOT))
+      sexp(c, true);
+    else
+      emit_constant(c, NIL_VAL);
+
+    for (int i = 0; i < elements - 1; ++i)
+      emit_byte(c, OP_CONS);
+  }
+
+  consume(c->parser, TOKEN_RIGHT_PAREN, "Expect ')' at the end of a list");
+}
+
+static void call_or_primitive(struct compiler *c)
+{
+  if (check(c->parser, TOKEN_RIGHT_PAREN))
+    error_at_current(c->parser, "Expect function to call");
   else if (is_primitive(c->parser))
     primitive(c);
   else
@@ -533,17 +562,23 @@ static void list(struct compiler *c)
   consume(c->parser, TOKEN_RIGHT_PAREN, "Expect ')' at the end of a list");
 }
 
-static void sexp(struct compiler *c)
+static void sexp(struct compiler *c, bool quoted)
 {
-  if (match(c->parser, TOKEN_IDENTIFIER))
-    identifier(c);
-  else if (match(c->parser, TOKEN_NUMBER))
+  if (match(c->parser, TOKEN_IDENTIFIER)) {
+    if (quoted)
+      atom(c);
+    else
+      identifier(c);
+  } else if (match(c->parser, TOKEN_NUMBER))
     number(c);
   else if (match(c->parser, TOKEN_QUOTE))
-    quote(c);
-  else if (match(c->parser, TOKEN_LEFT_PAREN))
-    list(c);
-  else
+    sexp(c, true);
+  else if (match(c->parser, TOKEN_LEFT_PAREN)) {
+    if (quoted)
+      list(c);
+    else
+      call_or_primitive(c);
+  } else
     error_at_current(c->parser, "Unexpected token");
 
   if (c->parser->panic_mode)
@@ -567,5 +602,5 @@ void compile(const char *source)
 
   advance(&p);
   while (!match(&p, TOKEN_EOF))
-    sexp(&c);
+    sexp(&c, false);
 }

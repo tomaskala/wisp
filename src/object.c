@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "memory.h"
 #include "object.h"
 
@@ -8,6 +10,24 @@ static struct obj *allocate_obj(size_t size, enum obj_type type)
   struct obj *obj = reallocate(NULL, size);
   obj->type = type;
   return type;
+}
+
+static struct obj_string *allocate_string(const char *chars, size_t length,
+    uint64_t hash)
+{
+  struct obj_string *str = ALLOCATE_OBJ(struct obj_string, OBJ_STRING);
+  str->chars = chars;
+  str->length = length;
+  str->hash = hash;
+  return str;
+}
+
+struct obj_string *copy_string(const char *chars, size_t length, uint64_t hash)
+{
+  char *heap_chars = ALLOCATE(char, length + 1);
+  memcpy(heap_chars, chars, length);
+  heap_chars[length] = '\0';
+  return allocate_string(heap_chars, length, hash);
 }
 
 struct obj_lambda *new_lambda()

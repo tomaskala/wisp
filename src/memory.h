@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#define ALLOCATE(type, count) reallocate(NULL, sizeof(type) * (count))
+
 #define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity) * 2)
 
 #define GROW_ARRAY(type, ptr, new_count) \

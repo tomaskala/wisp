@@ -99,11 +99,11 @@ static struct token number(struct scanner *sc)
   return make_token(sc, TOKEN_NUMBER);
 }
 
-static enum token_type check_keyword(struct scanner *sc, int start, int len,
+static enum token_type check_keyword(struct scanner *sc, int start, int length,
     const char *rest, enum token_type type)
 {
-  if (sc->current - sc->start == start + len
-      && memcmp(sc->start + start, rest, len) == 0)
+  if (sc->current - sc->start == start + length
+      && memcmp(sc->start + start, rest, length) == 0)
     return type;
 
   return TOKEN_IDENTIFIER;

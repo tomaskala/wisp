@@ -18,6 +18,19 @@ static int count_pass = 0;
     } \
   } while (false)
 
+// A variation of the TEST macro that does not expect any string formatting.
+// Necessary because __VA_ARGS__ must be non-empty.
+#define TEST1(cond, msg) \
+  do { \
+    if (cond) { \
+      printf("\033[32;1mPASS\033[0m " msg "\n"); \
+      count_pass++; \
+    } else { \
+      printf("\033[31;1mFAIL\033[0m " msg "\n"); \
+      count_fail++; \
+    } \
+  } while (false)
+
 static void test_scanner_simple(void)
 {
   const char *sources[] = {
@@ -196,12 +209,12 @@ static void test_scanner_skip_comment(void)
     scanner_init(&sc, source);
 
     struct token tok = scanner_next(&sc);
-    TEST(tok.type == TOKEN_NUMBER, "skip comment %d", 1);
-    TEST(tok.length == 3, "skip comment %d, length %d", 1, tok.length);
-    TEST(tok.line == 2, "skip comment %d, line %d", 1, tok.line);
+    TEST1(tok.type == TOKEN_NUMBER, "skip comment 1");
+    TEST(tok.length == 3, "skip comment 1, length %d", tok.length);
+    TEST(tok.line == 2, "skip comment 1, line %d", tok.line);
 
     tok = scanner_next(&sc);
-    TEST(tok.type == TOKEN_EOF, "skip comment %d, source end", 1);
+    TEST1(tok.type == TOKEN_EOF, "skip comment 1, source end");
   }
 
   {
@@ -213,17 +226,17 @@ static void test_scanner_skip_comment(void)
     scanner_init(&sc, source);
 
     struct token tok = scanner_next(&sc);
-    TEST(tok.type == TOKEN_NUMBER, "skip comment %d", 2);
-    TEST(tok.length == 3, "skip comment %d, length %d", 2, tok.length);
-    TEST(tok.line == 1, "skip comment %d, line %d", 2, tok.line);
+    TEST1(tok.type == TOKEN_NUMBER, "skip comment 2");
+    TEST(tok.length == 3, "skip comment 2, length %d", tok.length);
+    TEST(tok.line == 1, "skip comment 2, line %d", tok.line);
 
     tok = scanner_next(&sc);
-    TEST(tok.type == TOKEN_NUMBER, "skip comment %d", 2);
-    TEST(tok.length == 4, "skip comment %d, length %d", 2, tok.length);
-    TEST(tok.line == 3, "skip comment %d, line %d", 2, tok.line);
+    TEST1(tok.type == TOKEN_NUMBER, "skip comment 2");
+    TEST(tok.length == 4, "skip comment 2, length %d", tok.length);
+    TEST(tok.line == 3, "skip comment 2, line %d", tok.line);
 
     tok = scanner_next(&sc);
-    TEST(tok.type == TOKEN_EOF, "skip comment %d, source end", 2);
+    TEST1(tok.type == TOKEN_EOF, "skip comment 2, source end");
   }
 }
 
@@ -241,11 +254,11 @@ static void test_scanner_compound(void)
 
     for (int i = 0; i < 3; ++i) {
       struct token tok = scanner_next(&sc);
-      TEST(tok.type == types[i], "compound %d:%d", 1, i + 1);
+      TEST(tok.type == types[i], "compound 1:%d", i + 1);
     }
 
     struct token tok = scanner_next(&sc);
-    TEST(tok.type == TOKEN_EOF, "compound %d, source end", 1);
+    TEST1(tok.type == TOKEN_EOF, "compound 1, source end");
   }
 
   {
@@ -276,11 +289,11 @@ static void test_scanner_compound(void)
 
     for (int i = 0; i < 19; ++i) {
       struct token tok = scanner_next(&sc);
-      TEST(tok.type == types[i], "compound %d:%d", 2, i + 1);
+      TEST(tok.type == types[i], "compound 2:%d", i + 1);
     }
 
     struct token tok = scanner_next(&sc);
-    TEST(tok.type == TOKEN_EOF, "compound %d, source end", 2);
+    TEST1(tok.type == TOKEN_EOF, "compound 2, source end");
   }
 }
 

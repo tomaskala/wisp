@@ -3,13 +3,14 @@
 #include "memory.h"
 #include "object.h"
 
-#define ALLOCATE_OBJ(type, obj_type) allocate_obj(sizeof(type), object_type)
+#define ALLOCATE_OBJ(type, obj_type) \
+  (type *) allocate_obj(sizeof(type), obj_type)
 
 static struct obj *allocate_obj(size_t size, enum obj_type type)
 {
   struct obj *obj = reallocate(NULL, size);
   obj->type = type;
-  return type;
+  return obj;
 }
 
 static struct obj_string *allocate_string(const char *chars, size_t length,

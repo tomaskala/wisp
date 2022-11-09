@@ -16,7 +16,7 @@ struct obj {
 // TODO: Switch to flexible array members.
 struct obj_string {
   struct obj obj;
-  const char *chars;
+  char *chars;
   size_t length;
   uint64_t hash;
 };

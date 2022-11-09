@@ -13,7 +13,7 @@ static struct obj *allocate_obj(size_t size, enum obj_type type)
   return obj;
 }
 
-static struct obj_string *allocate_string(const char *chars, size_t length,
+static struct obj_string *allocate_string(char *chars, size_t length,
     uint64_t hash)
 {
   struct obj_string *str = ALLOCATE_OBJ(struct obj_string, OBJ_STRING);

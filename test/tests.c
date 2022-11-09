@@ -1,8 +1,12 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "../src/common.h"
 #include "../src/scanner.h"
+#include "../src/memory.h"
+#include "../src/object.h"
+#include "../src/table.h"
 
 static int count_fail = 0;
 static int count_pass = 0;
@@ -297,6 +301,175 @@ static void test_scanner_compound(void)
   }
 }
 
+static void test_interning_unique(void)
+{
+  const char *strings[] = {
+    "a",
+    "cat",
+    "",
+    "a string",
+    "a very very long string",
+    "this one is extremely long, so long that it might consist of many words",
+    "<>><%$#@&* $%#$% $%",
+    "\n453453\tlalala",
+    "another one",
+    "let's have one more",
+    NULL,
+  };
+
+  struct str_pool pool;
+  str_pool_init(&pool);
+
+  for (int i = 0; strings[i] != NULL; ++i) {
+    struct obj_string *interned = intern(&pool, strings[i],
+        strlen(strings[i]));
+    const char *c_interned = interned->chars;
+
+    int non_null_positions = 0;
+    for (int j = 0; j < 1 << pool.exp; ++j)
+      if (pool.ht[j] != NULL)
+        non_null_positions++;
+
+    TEST(strlen(strings[i]) == interned->length
+        && interned->length == strlen(c_interned)
+        && memcmp(strings[i], c_interned, strlen(strings[i])) == 0,
+        "unique interning %d, equality", i + 1);
+    TEST(pool.count == i + 1, "unique interning %d, pool size %d",
+        i + 1, pool.count);
+    TEST(pool.count == non_null_positions, "unique interning %d, non nulls %d",
+        i + 1, non_null_positions);
+  }
+
+  for (int i = 0; i < 1 << pool.exp; ++i) {
+    if (pool.ht[i] == NULL)
+      continue;
+
+    // TODO: Replace with obj_free once written.
+    FREE(pool.ht[i]->chars);
+    FREE(pool.ht[i]);
+  }
+
+  str_pool_free(&pool);
+}
+
+static void test_interning_non_unique(void)
+{
+  const char *strings[] = {
+    "a",
+    "cat",
+    "",
+    "cat",
+    "a string",
+    "a very very long string",
+    "<>><%$#@&* $%#$% $%",
+    "a very very long string",
+    "this one is extremely long, so long that it might consist of many words",
+    "a string",
+    "<>><%$#@&* $%#$% $%",
+    "\n453453\tlalala",
+    "",
+    "a",
+    "b",
+    "c",
+    "d",
+    "e",
+    "a",
+    "b",
+    "a very very long string",
+    "<>><%$#@&* $%#$% $%",
+    "c",
+    "d",
+    "cat",
+    "1",
+    "2",
+    "3",
+    "4",
+    "5",
+    "e",
+    "this one is extremely long, so long that it might consist of many words",
+    NULL,
+  };
+
+  bool is_unique[] = {
+    true,
+    true,
+    true,
+    false,
+    true,
+    true,
+    true,
+    false,
+    true,
+    false,
+    false,
+    true,
+    false,
+    false,
+    true,
+    true,
+    true,
+    true,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    false,
+    true,
+    true,
+    true,
+    true,
+    true,
+    false,
+    false,
+  };
+
+  int prev_pool_count = 0;
+  struct str_pool pool;
+  str_pool_init(&pool);
+
+  for (int i = 0; strings[i] != NULL; ++i) {
+    struct obj_string *interned = intern(&pool, strings[i],
+        strlen(strings[i]));
+    const char *c_interned = interned->chars;
+
+    int non_null_positions = 0;
+    for (int j = 0; j < 1 << pool.exp; ++j)
+      if (pool.ht[j] != NULL)
+        non_null_positions++;
+
+    TEST(strlen(strings[i]) == interned->length
+        && interned->length == strlen(c_interned)
+        && memcmp(strings[i], c_interned, strlen(strings[i])) == 0,
+        "non-unique interning %d, equality", i + 1);
+
+    if (is_unique[i])
+      TEST(pool.count == prev_pool_count + 1,
+          "non-unique interning %d, pool size is %d, should be %d (unique string)",
+          i + 1, pool.count, prev_pool_count + 1);
+    else
+      TEST(pool.count == prev_pool_count,
+          "non-unique interning %d, pool size is %d, should be %d (non-unique string)",
+          i + 1, pool.count, prev_pool_count);
+
+    TEST(pool.count == non_null_positions, "unique interning %d, non nulls %d",
+        i + 1, non_null_positions);
+
+    prev_pool_count = pool.count;
+  }
+
+  for (int i = 0; i < 1 << pool.exp; ++i) {
+    if (pool.ht[i] == NULL)
+      continue;
+
+    // TODO: Replace with obj_free once written.
+    FREE(pool.ht[i]->chars);
+    FREE(pool.ht[i]);
+  }
+  str_pool_free(&pool);
+}
+
 int main(void)
 {
   // Scanner tests.
@@ -305,6 +478,10 @@ int main(void)
   test_scanner_number();
   test_scanner_skip_comment();
   test_scanner_compound();
+
+  // String pool tests.
+  test_interning_unique();
+  test_interning_non_unique();
 
   printf("%d failed, %d passed\n", count_fail, count_pass);
   return count_fail != 0;

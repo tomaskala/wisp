@@ -11,7 +11,8 @@ SRCS = \
 	src/memory.c \
 	src/compiler.c \
 	src/value.c \
-	src/object.c
+	src/object.c \
+	src/table.c
 
 DBGEXE     = dbg
 DBGOBJS    = src/main.dbg.o $(SRCS:.c=.dbg.o)

@@ -213,6 +213,8 @@ static void synchronize(struct parser *p)
 static uint8_t identifier_constant(struct compiler *c, struct token *name)
 {
   // TODO: Add name as an atom constant
+  (void) c;
+  (void) name;
   return (uint8_t) 0;
 }
 
@@ -488,6 +490,7 @@ static int resolve_upvalue(struct compiler *c, struct token *name)
 static void atom(struct compiler *c)
 {
   // TODO
+  (void) c;
 }
 
 static void identifier(struct compiler *c)

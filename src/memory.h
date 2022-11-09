@@ -7,11 +7,15 @@
 
 #define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity) * 2)
 
+#define GROW_EXP_CAPACITY(exp) ((exp) < 3 ? 3 : (exp) + 1)
+
 #define GROW_ARRAY(type, ptr, new_count) \
   reallocate(ptr, sizeof(type) * new_count)
 
 #define FREE(ptr) reallocate(ptr, 0)
 
 void *reallocate(void *, size_t);
+
+void *callocate(size_t, size_t);
 
 #endif

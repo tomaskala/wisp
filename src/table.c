@@ -30,7 +30,7 @@ static uint64_t hash_string(const char *str, int length)
 static void adjust_capacity(struct str_pool *pool)
 {
   int new_exp = GROW_EXP_CAPACITY(pool->exp);
-  struct obj_string **new_ht = callocate((size_t) CAPACITY(new_exp),
+  struct obj_string **new_ht = wisp_calloc((size_t) CAPACITY(new_exp),
       sizeof(struct obj_string *));
 
   if (pool->ht != NULL) {

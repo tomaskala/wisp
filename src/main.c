@@ -3,8 +3,6 @@
 
 #include "scanner.h"
 
-#define PROGRAM_NAME "wisp"
-
 #define EXIT_USAGE_ERROR 64
 #define EXIT_DATA_ERROR 65
 #define EXIT_SOFTWARE_ERROR 70
@@ -83,7 +81,7 @@ int main(int argc, const char **argv)
     exit_code = run_file(argv[1]);
   else {
     exit_code = EXIT_USAGE_ERROR;
-    fprintf(stderr, "Usage: " PROGRAM_NAME " [path]\n");
+    fprintf(stderr, "Usage: wisp [path]\n");
   }
   return exit_code;
 }

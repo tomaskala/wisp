@@ -8,7 +8,7 @@
 
 static struct obj *allocate_obj(size_t size, enum obj_type type)
 {
-  struct obj *obj = reallocate(NULL, size);
+  struct obj *obj = wisp_realloc(NULL, size);
   obj->type = type;
   return obj;
 }

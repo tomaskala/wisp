@@ -1,8 +1,6 @@
 #include "memory.h"
 
-// TODO: Rename by introducing the 'wisp_' prefix.
-
-void *reallocate(void *ptr, size_t new_size)
+void *wisp_realloc(void *ptr, size_t new_size)
 {
   if (new_size == 0) {
     free(ptr);
@@ -16,7 +14,7 @@ void *reallocate(void *ptr, size_t new_size)
   return result;
 }
 
-void *callocate(size_t nmemb, size_t size)
+void *wisp_calloc(size_t nmemb, size_t size)
 {
   void *result = calloc(nmemb, size);
   if (result == NULL)

@@ -2,19 +2,19 @@
 #define WISP_SCANNER_H
 
 #define IS_PRIMITIVE(type) \
-  (_PRIMITIVE_START <= (type) && (type) <= _PRIMITIVE_END)
+  (PRIMITIVE_START <= (type) && (type) <= PRIMITIVE_END)
 
 enum token_type {
   // Single-character tokens.
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_DOT,
 
   // Primitives.
-  _PRIMITIVE_START,
+  PRIMITIVE_START,
 
     TOKEN_DEFINE, TOKEN_LAMBDA, TOKEN_QUOTE,
     TOKEN_CONS, TOKEN_CAR, TOKEN_CDR,
 
-  _PRIMITIVE_END,
+  PRIMITIVE_END,
 
   // Literals.
   TOKEN_IDENTIFIER, TOKEN_NUMBER,

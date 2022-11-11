@@ -388,7 +388,7 @@ static void primitive(struct compiler *c)
     cdr(c);
   else
     // Should never happen as long as all primitive tokens are between
-    // '_PRIMITIVE_START' and '_PRIMITIVE_END'.
+    // 'PRIMITIVE_START' and 'PRIMITIVE_END'.
     error_at_current(c->parser, "Unknown primitive");
 }
 

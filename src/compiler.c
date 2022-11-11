@@ -210,7 +210,7 @@ static void synchronize(struct parser *p)
 
 static uint8_t atom(struct compiler *c, struct token *name)
 {
-  struct obj_string *atom = str_pool_intern(&c->w->str_pool, name->start,
+  struct obj_string *atom = str_pool_intern(&c->w->atoms, name->start,
       name->len);
   return make_constant(c, OBJ_VAL(atom));
 }

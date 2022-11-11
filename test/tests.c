@@ -318,7 +318,7 @@ static void test_interning_unique(void)
   };
 
   struct str_pool pool;
-  str_pool_init(&pool);
+  str_pool_init(&pool, OBJ_ATOM);
 
   for (int i = 0; strings[i] != NULL; ++i) {
     struct obj_string *interned = str_pool_intern(&pool, strings[i],
@@ -427,7 +427,7 @@ static void test_interning_non_unique(void)
 
   int prev_pool_count = 0;
   struct str_pool pool;
-  str_pool_init(&pool);
+  str_pool_init(&pool, OBJ_ATOM);
 
   for (int i = 0; strings[i] != NULL; ++i) {
     struct obj_string *interned = str_pool_intern(&pool, strings[i],
@@ -487,7 +487,7 @@ static void test_interning_identity()
   };
 
   struct str_pool pool;
-  str_pool_init(&pool);
+  str_pool_init(&pool, OBJ_ATOM);
 
   for (int i = 0; strings[i] != NULL; ++i) {
     struct obj_string *fst = str_pool_intern(&pool, strings[i],

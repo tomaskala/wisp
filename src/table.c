@@ -1,8 +1,6 @@
 #include <string.h>
 
-#include "common.h"
 #include "memory.h"
-#include "object.h"
 #include "table.h"
 
 #define CAPACITY(exp) (1 << (exp))
@@ -57,8 +55,9 @@ static void adjust_capacity(struct str_pool *pool)
   pool->ht = new_ht;
 }
 
-void str_pool_init(struct str_pool *pool)
+void str_pool_init(struct str_pool *pool, enum obj_type str_type)
 {
+  pool->str_type = str_type;
   // Together with resizing at 50% load, initializing exp to 1
   // ensures that the array gets allocated upon first interning.
   pool->exp = 1;
@@ -80,7 +79,7 @@ struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
 
     if (pool->ht[i] == NULL) {
       pool->count++;
-      pool->ht[i] = copy_string(str, len, hash);
+      pool->ht[i] = copy_string(pool->str_type, str, len, hash);
       return pool->ht[i];
     } else if (pool->ht[i]->len == len
         && memcmp(pool->ht[i]->chars, str, len) == 0)
@@ -91,5 +90,5 @@ struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
 void str_pool_free(struct str_pool *pool)
 {
   FREE(pool->ht);
-  str_pool_init(pool);
+  str_pool_init(pool, pool->str_type);
 }

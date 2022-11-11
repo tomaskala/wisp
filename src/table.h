@@ -4,8 +4,12 @@
 // Source: https://nullprogram.com/blog/2022/08/08/
 
 #include "common.h"
+#include "object.h"
 
 struct str_pool {
+  // Exact type of strings being interned.
+  enum obj_type str_type;
+
   // log2(capacity)
   int exp;
 
@@ -16,7 +20,7 @@ struct str_pool {
   struct obj_string **ht;
 };
 
-void str_pool_init(struct str_pool *);
+void str_pool_init(struct str_pool *, enum obj_type);
 
 struct obj_string *str_pool_intern(struct str_pool *, const char *, size_t);
 

@@ -470,6 +470,37 @@ static void test_interning_non_unique(void)
   str_pool_free(&pool);
 }
 
+static void test_interning_identity()
+{
+  const char *strings[] = {
+    "a",
+    "cat",
+    "",
+    "a string",
+    "a very very long string",
+    "this one is extremely long, so long that it might consist of many words",
+    "<>><%$#@&* $%#$% $%",
+    "\n453453\tlalala",
+    "another one",
+    "let's have one more",
+    NULL,
+  };
+
+  struct str_pool pool;
+  str_pool_init(&pool);
+
+  for (int i = 0; strings[i] != NULL; ++i) {
+    struct obj_string *fst = str_pool_intern(&pool, strings[i],
+        strlen(strings[i]));
+    struct obj_string *snd = str_pool_intern(&pool, strings[i],
+        strlen(strings[i]));
+
+    TEST(fst->len == snd->len && memcmp(fst->chars, snd->chars, fst->len) == 0,
+        "Interning comparison by equality %d", i + 1);
+    TEST(fst == snd, "Interning comparison by identity %d", i + 1);
+  }
+}
+
 int main(void)
 {
   // Scanner tests.
@@ -482,6 +513,7 @@ int main(void)
   // String pool tests.
   test_interning_unique();
   test_interning_non_unique();
+  test_interning_identity();
 
   printf("%d failed, %d passed\n", count_fail, count_pass);
   return count_fail != 0;

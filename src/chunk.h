@@ -23,8 +23,8 @@ enum opcode {
 };
 
 struct chunk {
-  size_t capacity;
-  size_t count;
+  int capacity;
+  int count;
   uint8_t *code;
   int *lines;  // TODO: Use run-length encoding.
   struct value_array constants;

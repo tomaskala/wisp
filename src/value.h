@@ -29,8 +29,8 @@ typedef struct {
 #define OBJ_VAL(o)    ((Value) {VAL_OBJ, {.obj = (struct obj *) o}})
 
 struct value_array {
-  size_t capacity;
-  size_t count;
+  int capacity;
+  int count;
   Value *values;
 };
 

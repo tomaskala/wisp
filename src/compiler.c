@@ -74,7 +74,7 @@ struct compiler {
   struct upvalue upvalues[UINT8_COUNT];
 
   // Number of local variables defined in the currently compiled lambda.
-  size_t local_count;
+  int local_count;
 
   // How many scopes away from the global scope (= 0).
   int scope_depth;

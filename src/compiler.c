@@ -208,11 +208,11 @@ static void synchronize(struct parser *p)
   }
 }
 
-static uint8_t identifier_constant(struct compiler *c, struct token *name)
+static uint8_t atom(struct compiler *c, struct token *name)
 {
-  struct obj_string *identifier = str_pool_intern(&c->w->str_pool, name->start,
+  struct obj_string *atom = str_pool_intern(&c->w->str_pool, name->start,
       name->len);
-  return make_constant(c, OBJ_VAL(identifier));
+  return make_constant(c, OBJ_VAL(atom));
 }
 
 static bool identifiers_equal(struct token *a, struct token *b)
@@ -279,7 +279,7 @@ static uint8_t read_identifier(struct compiler *c, const char *msg)
   if (c->scope_depth > 0)
     return 0;
 
-  return identifier_constant(c, &c->parser->prev);
+  return atom(c, &c->parser->prev);
 }
 
 static void sexp(struct compiler *, bool);
@@ -485,12 +485,6 @@ static int resolve_upvalue(struct compiler *c, struct token *name)
   return -1;
 }
 
-static void atom(struct compiler *c)
-{
-  // TODO
-  (void) c;
-}
-
 static void identifier(struct compiler *c)
 {
   uint8_t get_op;
@@ -505,7 +499,7 @@ static void identifier(struct compiler *c)
     get_op = OP_GET_UPVALUE;
   else {
     // Global scope.
-    arg = identifier_constant(c, name);
+    arg = atom(c, name);
     get_op = OP_GET_GLOBAL;
   }
 
@@ -564,7 +558,7 @@ static void sexp(struct compiler *c, bool quoted)
 {
   if (match(c->parser, TOKEN_IDENTIFIER)) {
     if (quoted)
-      atom(c);
+      atom(c, &c->parser->prev);
     else
       identifier(c);
   } else if (match(c->parser, TOKEN_NUMBER))

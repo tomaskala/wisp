@@ -16,9 +16,21 @@ static char *read_file(const char *path)
     return NULL;
   }
 
-  fseek(f, 0L, SEEK_END);
-  size_t file_size = ftell(f);
+  if (fseek(f, 0L, SEEK_END) == -1) {
+    fclose(f);
+    fprintf(stderr, "Cannot seek to the end of %s\n", path);
+    return NULL;
+  }
+
+  long fs = ftell(f);
+  if (fs == -1) {
+    fclose(f);
+    fprintf(stderr, "Cannot tell the size of %s\n", path);
+    return NULL;
+  }
+
   rewind(f);
+  size_t file_size = (size_t) fs;
 
   char *buffer = malloc((file_size + 1) * sizeof(char));
   if (buffer == NULL) {

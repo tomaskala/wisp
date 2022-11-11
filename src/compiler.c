@@ -110,7 +110,7 @@ static void error_at(struct parser *p, struct token tok, const char *msg)
   if (tok.type == TOKEN_EOF)
     fprintf(stderr, " at end");
   else if (tok.type != TOKEN_ERROR)
-    fprintf(stderr, " at '%.*s'", tok.length, tok.start);
+    fprintf(stderr, " at '%.*s'", tok.len, tok.start);
 
   fprintf(stderr, ": %s\n", msg);
   p->had_error = true;
@@ -219,7 +219,7 @@ static uint8_t identifier_constant(struct compiler *c, struct token *name)
 
 static bool identifiers_equal(struct token *a, struct token *b)
 {
-  return a->length == b->length && memcmp(a->start, b->start, a->length) == 0;
+  return a->len == b->len && memcmp(a->start, b->start, a->len) == 0;
 }
 
 static void scope_begin(struct compiler *c)

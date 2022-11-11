@@ -17,7 +17,7 @@ struct obj {
 struct obj_string {
   struct obj obj;
   char *chars;
-  size_t length;
+  size_t len;
   uint64_t hash;
 };
 

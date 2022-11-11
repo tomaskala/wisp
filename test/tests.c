@@ -98,7 +98,7 @@ static void test_scanner_identifier(void)
 
       struct token tok = scanner_next(&sc);
       TEST(tok.type == TOKEN_IDENTIFIER, "identifier '%s', type", sources[i]);
-      TEST(tok.length == lengths[i], "identifier '%s', length %d",
+      TEST(tok.len == lengths[i], "identifier '%s', length %d",
         sources[i], lengths[i]);
 
       tok = scanner_next(&sc);
@@ -195,7 +195,7 @@ static void test_scanner_number(void)
 
     struct token tok = scanner_next(&sc);
     TEST(tok.type == TOKEN_NUMBER, "number token '%s', type", sources[i]);
-    TEST(tok.length == lengths[i], "number token '%s', length %d",
+    TEST(tok.len == lengths[i], "number token '%s', length %d",
       sources[i], lengths[i]);
 
     tok = scanner_next(&sc);
@@ -214,7 +214,7 @@ static void test_scanner_skip_comment(void)
 
     struct token tok = scanner_next(&sc);
     TEST1(tok.type == TOKEN_NUMBER, "skip comment 1");
-    TEST(tok.length == 3, "skip comment 1, length %d", tok.length);
+    TEST(tok.len == 3, "skip comment 1, length %d", tok.len);
     TEST(tok.line == 2, "skip comment 1, line %d", tok.line);
 
     tok = scanner_next(&sc);
@@ -231,12 +231,12 @@ static void test_scanner_skip_comment(void)
 
     struct token tok = scanner_next(&sc);
     TEST1(tok.type == TOKEN_NUMBER, "skip comment 2");
-    TEST(tok.length == 3, "skip comment 2, length %d", tok.length);
+    TEST(tok.len == 3, "skip comment 2, length %d", tok.len);
     TEST(tok.line == 1, "skip comment 2, line %d", tok.line);
 
     tok = scanner_next(&sc);
     TEST1(tok.type == TOKEN_NUMBER, "skip comment 2");
-    TEST(tok.length == 4, "skip comment 2, length %d", tok.length);
+    TEST(tok.len == 4, "skip comment 2, length %d", tok.len);
     TEST(tok.line == 3, "skip comment 2, line %d", tok.line);
 
     tok = scanner_next(&sc);
@@ -330,8 +330,8 @@ static void test_interning_unique(void)
       if (pool.ht[j] != NULL)
         non_null_positions++;
 
-    TEST(strlen(strings[i]) == interned->length
-        && interned->length == strlen(c_interned)
+    TEST(strlen(strings[i]) == interned->len
+        && interned->len == strlen(c_interned)
         && memcmp(strings[i], c_interned, strlen(strings[i])) == 0,
         "unique interning %d, equality", i + 1);
     TEST(pool.count == i + 1, "unique interning %d, pool size %d",
@@ -439,8 +439,8 @@ static void test_interning_non_unique(void)
       if (pool.ht[j] != NULL)
         non_null_positions++;
 
-    TEST(strlen(strings[i]) == interned->length
-        && interned->length == strlen(c_interned)
+    TEST(strlen(strings[i]) == interned->len
+        && interned->len == strlen(c_interned)
         && memcmp(strings[i], c_interned, strlen(strings[i])) == 0,
         "non-unique interning %d, equality", i + 1);
 

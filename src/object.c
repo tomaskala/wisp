@@ -13,22 +13,22 @@ static struct obj *allocate_obj(size_t size, enum obj_type type)
   return obj;
 }
 
-static struct obj_string *allocate_string(char *chars, size_t length,
+static struct obj_string *allocate_string(char *chars, size_t len,
     uint64_t hash)
 {
   struct obj_string *str = ALLOCATE_OBJ(struct obj_string, OBJ_STRING);
   str->chars = chars;
-  str->length = length;
+  str->len = len;
   str->hash = hash;
   return str;
 }
 
-struct obj_string *copy_string(const char *chars, size_t length, uint64_t hash)
+struct obj_string *copy_string(const char *chars, size_t len, uint64_t hash)
 {
-  char *heap_chars = ALLOCATE(char, length + 1);
-  memcpy(heap_chars, chars, length);
-  heap_chars[length] = '\0';
-  return allocate_string(heap_chars, length, hash);
+  char *heap_chars = ALLOCATE(char, len + 1);
+  memcpy(heap_chars, chars, len);
+  heap_chars[len] = '\0';
+  return allocate_string(heap_chars, len, hash);
 }
 
 struct obj_lambda *new_lambda()

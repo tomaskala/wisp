@@ -28,7 +28,7 @@ struct token {
   const char *start;
 
   // Length of the token.
-  int length;
+  int len;
 
   // Number of the line the token appears in.
   int line;

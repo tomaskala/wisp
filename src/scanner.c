@@ -26,7 +26,7 @@ static struct token make_token(struct scanner *sc, enum token_type type)
   struct token token;
   token.type = type;
   token.start = sc->start;
-  token.length = sc->current - sc->start;
+  token.len = sc->current - sc->start;
   token.line = sc->line;
   return token;
 }
@@ -36,7 +36,7 @@ static struct token error_token(struct scanner *sc, const char *msg)
   struct token token;
   token.type = TOKEN_ERROR;
   token.start = msg;
-  token.length = strlen(msg);
+  token.len = strlen(msg);
   token.line = sc->line;
   return token;
 }
@@ -100,11 +100,11 @@ static struct token number(struct scanner *sc)
   return make_token(sc, TOKEN_NUMBER);
 }
 
-static enum token_type check_keyword(struct scanner *sc, int start, int length,
+static enum token_type check_keyword(struct scanner *sc, int start, int len,
     const char *rest, enum token_type type)
 {
-  if (sc->current - sc->start == start + length
-      && memcmp(sc->start + start, rest, length) == 0)
+  if (sc->current - sc->start == start + len
+      && memcmp(sc->start + start, rest, len) == 0)
     return type;
 
   return TOKEN_IDENTIFIER;

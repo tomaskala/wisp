@@ -15,11 +15,11 @@ static int32_t ht_lookup(uint64_t hash, int exp, int32_t idx)
 }
 
 // FNV-1a
-static uint64_t hash_string(const char *str, int length)
+static uint64_t hash_string(const char *str, int len)
 {
   uint64_t hash = 0x3243f6a8885a308d;
 
-  for (int i = 0; i < length; ++i) {
+  for (int i = 0; i < len; ++i) {
     hash ^= str[i] & 255;
     hash *= 1111111111111111111;
   }
@@ -66,23 +66,23 @@ void str_pool_init(struct str_pool *pool)
 }
 
 struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
-    size_t length)
+    size_t len)
 {
   if (pool->count + 1 == CAPACITY(pool->exp - 1))
     // Resize at 50% load.
     adjust_capacity(pool);
 
-  uint64_t hash = hash_string(str, length);
+  uint64_t hash = hash_string(str, len);
 
   for (int32_t i = hash;;) {
     i = ht_lookup(hash, pool->exp, i);
 
     if (pool->ht[i] == NULL) {
       pool->count++;
-      pool->ht[i] = copy_string(str, length, hash);
+      pool->ht[i] = copy_string(str, len, hash);
       return pool->ht[i];
-    } else if (pool->ht[i]->length == length
-        && memcmp(pool->ht[i]->chars, str, length) == 0)
+    } else if (pool->ht[i]->len == len
+        && memcmp(pool->ht[i]->chars, str, len) == 0)
       return pool->ht[i];
   }
 }

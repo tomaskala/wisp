@@ -210,10 +210,9 @@ static void synchronize(struct parser *p)
 
 static uint8_t identifier_constant(struct compiler *c, struct token *name)
 {
-  // TODO: Add name as an atom constant
-  (void) c;
-  (void) name;
-  return (uint8_t) 0;
+  struct obj_string *identifier = str_pool_intern(&c->w->str_pool, name->start,
+      name->len);
+  return make_constant(c, OBJ_VAL(identifier));
 }
 
 static bool identifiers_equal(struct token *a, struct token *b)

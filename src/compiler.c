@@ -192,17 +192,12 @@ static void emit_constant(struct compiler *c, Value v)
   emit_bytes(c, OP_CONSTANT, make_constant(c, v));
 }
 
-static bool is_primitive(struct parser *p)
-{
-  return p->curr.type >= _PRIMITIVE_START && p->curr.type <= _PRIMITIVE_END;
-}
-
 static void synchronize(struct parser *p)
 {
   p->panic_mode = false;
 
   while (p->curr.type != TOKEN_EOF) {
-    if (p->prev.type == TOKEN_RIGHT_PAREN || is_primitive(p))
+    if (p->prev.type == TOKEN_RIGHT_PAREN || IS_PRIMITIVE(p->curr.type))
       return;
 
     advance(p);
@@ -554,7 +549,7 @@ static void call_or_primitive(struct compiler *c)
 {
   if (check(c->parser, TOKEN_RIGHT_PAREN))
     error_at_current(c->parser, "Expect function to call");
-  else if (is_primitive(c->parser))
+  else if (IS_PRIMITIVE(c->parser->curr.type))
     primitive(c);
   else
     call(c);

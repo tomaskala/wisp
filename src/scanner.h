@@ -1,6 +1,9 @@
 #ifndef WISP_SCANNER_H
 #define WISP_SCANNER_H
 
+#define IS_PRIMITIVE(type) \
+  (_PRIMITIVE_START <= (type) && (type) <= _PRIMITIVE_END)
+
 enum token_type {
   // Single-character tokens.
   TOKEN_LEFT_PAREN, TOKEN_RIGHT_PAREN, TOKEN_DOT,

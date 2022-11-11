@@ -499,6 +499,16 @@ static void test_interning_identity()
         "Interning comparison by equality %d", i + 1);
     TEST(fst == snd, "Interning comparison by identity %d", i + 1);
   }
+
+  for (int i = 0; i < 1 << pool.exp; ++i) {
+    if (pool.ht[i] == NULL)
+      continue;
+
+    // TODO: Replace with obj_free once written.
+    FREE(pool.ht[i]->chars);
+    FREE(pool.ht[i]);
+  }
+  str_pool_free(&pool);
 }
 
 int main(void)

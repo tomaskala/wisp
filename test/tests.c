@@ -321,7 +321,7 @@ static void test_interning_unique(void)
   str_pool_init(&pool);
 
   for (int i = 0; strings[i] != NULL; ++i) {
-    struct obj_string *interned = intern(&pool, strings[i],
+    struct obj_string *interned = str_pool_intern(&pool, strings[i],
         strlen(strings[i]));
     const char *c_interned = interned->chars;
 
@@ -430,7 +430,7 @@ static void test_interning_non_unique(void)
   str_pool_init(&pool);
 
   for (int i = 0; strings[i] != NULL; ++i) {
-    struct obj_string *interned = intern(&pool, strings[i],
+    struct obj_string *interned = str_pool_intern(&pool, strings[i],
         strlen(strings[i]));
     const char *c_interned = interned->chars;
 

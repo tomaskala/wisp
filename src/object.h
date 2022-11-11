@@ -30,6 +30,7 @@ struct obj_lambda {
 };
 
 struct obj_string *copy_string(const char *, size_t, uint64_t);
+
 struct obj_lambda *new_lambda();
 
 #endif

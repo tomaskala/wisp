@@ -65,13 +65,7 @@ void str_pool_init(struct str_pool *pool)
   pool->ht = NULL;
 }
 
-void str_pool_free(struct str_pool *pool)
-{
-  FREE(pool->ht);
-  str_pool_init(pool);
-}
-
-struct obj_string *intern(struct str_pool *pool, const char *str,
+struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
     size_t length)
 {
   if (pool->count + 1 == CAPACITY(pool->exp - 1))
@@ -91,4 +85,10 @@ struct obj_string *intern(struct str_pool *pool, const char *str,
         && memcmp(pool->ht[i]->chars, str, length) == 0)
       return pool->ht[i];
   }
+}
+
+void str_pool_free(struct str_pool *pool)
+{
+  FREE(pool->ht);
+  str_pool_init(pool);
 }

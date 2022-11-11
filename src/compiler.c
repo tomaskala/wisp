@@ -76,14 +76,13 @@ struct compiler {
   // Number of local variables defined in the currently compiled lambda.
   size_t local_count;
 
-  // How many scopes away from the global scope (=0).
+  // How many scopes away from the global scope (= 0).
   int scope_depth;
 };
 
 static void parser_init(struct parser *p, struct scanner *sc)
 {
   p->scanner = sc;
-  // TODO: Initialize prev & curr?
   p->panic_mode = false;
   p->had_error = false;
 }
@@ -430,6 +429,7 @@ static int resolve_local(struct compiler *c, struct token *name)
 {
   for (int i = c->local_count - 1; i >= 0; --i) {
     struct local *local = &c->locals[i];
+
     if (identifiers_equal(name, &local->name)) {
       if (local->depth == -1)
         error(c->parser, "Can't read a variable in its own initializer");

@@ -61,6 +61,7 @@ static char peek_next(struct scanner *sc)
 {
   if (is_at_end(sc))
     return '\0';
+
   return sc->current[1];
 }
 

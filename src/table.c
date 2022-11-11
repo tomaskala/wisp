@@ -15,12 +15,13 @@ static int32_t ht_lookup(uint64_t hash, int exp, int32_t idx)
 }
 
 // FNV-1a
-static uint64_t hash_string(const char *str, int len)
+// TODO: Benchmark, experiment with the hash Lua uses (lstring.c:luaS_hash)
+static uint64_t hash_string(const char *str, size_t len)
 {
   uint64_t hash = 0x3243f6a8885a308d;
 
-  for (int i = 0; i < len; ++i) {
-    hash ^= str[i] & 255;
+  for (; len > 0; --len) {
+    hash ^= str[len - 1] & 255;
     hash *= 1111111111111111111;
   }
 

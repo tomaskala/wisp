@@ -25,8 +25,8 @@ typedef struct {
 #define AS_OBJ(value) ((value).as.obj)
 
 #define NIL_VAL       ((Value) {VAL_NIL, {.number = 0}})
-#define NUM_VAL(n)    ((Value) {VAL_NUM, {.number = n}})
-#define OBJ_VAL(o)    ((Value) {VAL_OBJ, {.obj = (struct obj *) o}})
+#define NUM_VAL(n)    ((Value) {VAL_NUM, {.number = (n)}})
+#define OBJ_VAL(o)    ((Value) {VAL_OBJ, {.obj = (struct obj *) (o)}})
 
 struct value_array {
   int capacity;

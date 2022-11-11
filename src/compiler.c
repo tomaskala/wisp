@@ -55,6 +55,9 @@ struct upvalue {
 };
 
 struct compiler {
+  // The overall state of the program shared by all compilers.
+  struct wisp_state *w;
+
   // The immediately surrounding compiler (or NULL if in global scope).
   struct compiler *enclosing;
 
@@ -87,9 +90,10 @@ static void parser_init(struct parser *p, struct scanner *sc)
   p->had_error = false;
 }
 
-static void compiler_init(struct compiler *c, struct compiler *enclosing,
-    struct parser *p, enum function_type type)
+static void compiler_init(struct compiler *c, struct wisp_state *w,
+    struct compiler *enclosing, struct parser *p, enum function_type type)
 {
+  c->w = w;
   c->enclosing = enclosing;
   c->parser = p;
   c->lambda = NULL;
@@ -301,7 +305,7 @@ static void define(struct compiler *c)
 static void lambda(struct compiler *c)
 {
   struct compiler inner;
-  compiler_init(&inner, c, c->parser, TYPE_LAMBDA);
+  compiler_init(&inner, c->w, c, c->parser, TYPE_LAMBDA);
   scope_begin(&inner);
 
   if (match(inner.parser, TOKEN_LEFT_PAREN)) {
@@ -580,9 +584,7 @@ static void sexp(struct compiler *c, bool quoted)
     synchronize(c->parser);
 }
 
-// TODO: Initialize scanner, parser and compiler outside and make this
-// TODO: function a "method" of compiler?
-void compile(const char *source)
+void compile(struct wisp_state *w, const char *source)
 {
   struct scanner sc;
   scanner_init(&sc, source);
@@ -591,7 +593,7 @@ void compile(const char *source)
   parser_init(&p, &sc);
 
   struct compiler c;
-  compiler_init(&c, NULL, &p, TYPE_SCRIPT);
+  compiler_init(&c, w, NULL, &p, TYPE_SCRIPT);
 
   advance(&p);
   while (!match(&p, TOKEN_EOF))

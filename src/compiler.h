@@ -1,6 +1,8 @@
 #ifndef WISP_COMPILER_H
 #define WISP_COMPILER_H
 
-void compile(const char *);
+#include "state.h"
+
+void compile(struct wisp_state *, const char *);
 
 #endif

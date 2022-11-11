@@ -3,6 +3,8 @@
 
 // Source: https://nullprogram.com/blog/2022/08/08/
 
+#include "common.h"
+
 struct str_pool {
   // log2(capacity)
   int exp;

@@ -70,6 +70,7 @@ static void run_repl()
       break;
     }
 
+    // TODO: This initializes and frees a VM for each interpreted line.
     struct obj_lambda *lambda = compile(&w, line);
     interpret(&w, lambda);
   }
@@ -101,7 +102,6 @@ static int run_file(const char *path)
   }
 
 end:
-  // TODO: Also GC all objects.
   wisp_state_free(&w);
   free(source);
 

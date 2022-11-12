@@ -4,7 +4,6 @@
 
 #include "chunk.h"
 #include "compiler.h"
-#include "object.h"
 #include "scanner.h"
 #include "value.h"
 
@@ -577,7 +576,7 @@ static void sexp(struct compiler *c, bool quoted)
     synchronize(c->parser);
 }
 
-void compile(struct wisp_state *w, const char *source)
+struct obj_lambda *compile(struct wisp_state *w, const char *source)
 {
   struct scanner sc;
   scanner_init(&sc, source);
@@ -591,4 +590,6 @@ void compile(struct wisp_state *w, const char *source)
   advance(&p);
   while (!match(&p, TOKEN_EOF))
     sexp(&c, false);
+
+  return p.had_error ? NULL : c.lambda;
 }

@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "compiler.h"
+#include "object.h"
 #include "scanner.h"
+#include "state.h"
 
 #define EXIT_USAGE_ERROR 64
 #define EXIT_DATA_ERROR 65
@@ -54,16 +57,24 @@ static char *read_file(const char *path)
 
 static void run_repl()
 {
-  // TODO: Read arbitrarily long lines.
   char line[1024];
+  struct wisp_state w;
+  wisp_state_init(&w);
+
+  // TODO: Read arbitrarily long lines.
   for (;;) {
     printf("> ");
     if (!fgets(line, sizeof(line), stdin)) {
       printf("\n");
       break;
     }
-    // TODO: interpret(line);
+
+    struct obj_lambda *lambda = compile(&w, line);
+    (void) lambda;
+    // TODO: interpret(lambda);
   }
+
+  wisp_state_free(&w);
 }
 
 static int run_file(const char *path)
@@ -72,13 +83,17 @@ static int run_file(const char *path)
   if (source == NULL)
     return EXIT_IO_ERROR;
 
-  printf("%s\n", source);
+  struct wisp_state w;
+  wisp_state_init(&w);
 
-  struct scanner sc;
-  scanner_init(&sc, source);
-  // TODO: interpret(source);
-  // TODO: compile error => EXIT_DATA_ERROR
+  struct obj_lambda *lambda = compile(&w, source);
+  if (lambda == NULL)
+    return EXIT_DATA_ERROR;
+
+  // TODO: interpret(lambda);
   // TODO: interpret error => EXIT_SOFTWARE_ERROR
+
+  wisp_state_free(&w);
   free(source);
 
   return EXIT_SUCCESS;

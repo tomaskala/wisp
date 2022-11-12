@@ -47,13 +47,31 @@ static void vm_free(struct vm *vm)
   // TODO
 }
 
+static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
+{
+  // TODO
+  return false;
+}
+
+static bool vm_run(struct vm *vm)
+{
+  // TODO
+  return false;
+}
+
 bool interpret(struct wisp_state *w, struct obj_lambda *lambda)
 {
   struct vm vm;
   vm_init(&vm, w);
 
   vm_stack_push(&vm, OBJ_VAL(lambda));
+  struct obj_closure *closure = new_closure(lambda);
+  vm_stack_pop(&vm);
+  vm_stack_push(&vm, OBJ_VAL(closure));
+
+  call(&vm, closure, 0);
+  bool result = vm_run(&vm);
 
   vm_free(&vm);
-  return false;
+  return result;
 }

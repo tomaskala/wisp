@@ -32,6 +32,21 @@ struct obj_string *copy_string(enum obj_type str_type, const char *chars,
   return allocate_string(str_type, heap_chars, len, hash);
 }
 
+struct obj_closure *new_closure(struct obj_lambda *lambda)
+{
+  struct obj_upvalue **upvalues = ALLOCATE(struct obj_upvalue *,
+      lambda->upvalue_count);
+
+  for (int i = 0; i < lambda->upvalue_count; ++i)
+    upvalues[i] = NULL;
+
+  struct obj_closure *closure = ALLOCATE_OBJ(struct obj_closure, OBJ_CLOSURE);
+  closure->lambda = lambda;
+  closure->upvalues = upvalues;
+  closure->upvalue_count = lambda->upvalue_count;
+  return closure;
+}
+
 struct obj_lambda *new_lambda()
 {
   struct obj_lambda *lambda = ALLOCATE_OBJ(struct obj_lambda, OBJ_LAMBDA);
@@ -40,4 +55,13 @@ struct obj_lambda *new_lambda()
   lambda->has_param_list = false;
   chunk_init(&lambda->chunk);
   return lambda;
+}
+
+struct obj_upvalue *new_upvalue(Value *slot)
+{
+  struct obj_upvalue *upvalue = ALLOCATE_OBJ(struct obj_upvalue, OBJ_UPVALUE);
+  upvalue->location = slot;
+  upvalue->closed = NIL_VAL;
+  upvalue->next = NULL;
+  return upvalue;
 }

@@ -1,10 +1,31 @@
+#include <stdarg.h>
+#include <stdio.h>
+
 #include "vm.h"
 
-#define STACK_MAX UINT8_COUNT
+#define FRAMES_MAX 64
+#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
+
+struct call_frame {
+  // Currently executed closure.
+  struct obj_closure *closure;
+
+  // The next instruction to be executed.
+  uint8_t *ip;
+
+  // The first slot in the VM value stack the closure can use.
+  Value *slots;
+};
 
 struct vm {
   // The overall state of the program.
   struct wisp_state *w;
+
+  // Contains all call nested call frames of the current closure execution.
+  struct call_frame frames[FRAMES_MAX];
+
+  // Number of currently nested call frames.
+  int frame_count;
 
   // A value must reside on the stack to be marked as reachable.
   Value stack[STACK_MAX];
@@ -15,8 +36,9 @@ struct vm {
 
 static void vm_stack_reset(struct vm *vm)
 {
+  vm->frame_count = 0;
   vm->stack_top = vm->stack;
-  // TODO: Once frames are implemented, reset those as well.
+  // TODO: Once upvalues are implemented, reset those as well.
 }
 
 static void vm_init(struct vm *vm, struct wisp_state *w)
@@ -47,10 +69,44 @@ static void vm_free(struct vm *vm)
   // TODO
 }
 
+static void runtime_error(struct vm *vm, const char *format, ...)
+{
+  va_list args;
+  va_start(args, format);
+  vfprintf(stderr, format, args);
+  va_end(args);
+  fputs("\n", stderr);
+
+  for (int i = vm->frame_count - 1; i >= 0; --i) {
+    struct call_frame *frame = &vm->frames[i];
+    struct obj_lambda *lambda = frame->closure->lambda;
+    size_t instruction = frame->ip - lambda->chunk.code - 1;
+    fprintf(stderr, "[line %d]\n", lambda->chunk.lines[instruction]);
+    // TODO: Output whether the error is in the script or the current function,
+    // TODO: if it has a name.
+  }
+
+  vm_stack_reset(vm);
+}
+
 static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
 {
-  // TODO
-  return false;
+  if (arg_count != closure->lambda->arity) {
+    runtime_error(vm, "Expected %" PRIu8 " arguments but got %" PRIu8,
+        closure->lambda->arity, arg_count);
+    return false;
+  }
+
+  if (vm->frame_count == FRAMES_MAX) {
+    runtime_error(vm, "Stack overflow");
+    return false;
+  }
+
+  struct call_frame *frame = &vm->frames[vm->frame_count++];
+  frame->closure = closure;
+  frame->ip = closure->lambda->chunk.code;
+  frame->slots = vm->stack_top - arg_count - 1;
+  return true;
 }
 
 static bool vm_run(struct vm *vm)

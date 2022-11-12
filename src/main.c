@@ -79,6 +79,8 @@ static void run_repl()
 
 static int run_file(const char *path)
 {
+  int exit_code = EXIT_SUCCESS;
+
   char *source = read_file(path);
   if (source == NULL)
     return EXIT_IO_ERROR;
@@ -87,17 +89,23 @@ static int run_file(const char *path)
   wisp_state_init(&w);
 
   struct obj_lambda *lambda = compile(&w, source);
-  if (lambda == NULL)
-    return EXIT_DATA_ERROR;
+  if (lambda == NULL) {
+    exit_code = EXIT_DATA_ERROR;
+    goto end;
+  }
 
   bool success = interpret(&w, lambda);
-  if (!success)
-    return EXIT_SOFTWARE_ERROR;
+  if (!success) {
+    exit_code = EXIT_SOFTWARE_ERROR;
+    goto end;
+  }
 
+end:
+  // TODO: Also GC all objects.
   wisp_state_free(&w);
   free(source);
 
-  return EXIT_SUCCESS;
+  return exit_code;
 }
 
 int main(int argc, const char **argv)

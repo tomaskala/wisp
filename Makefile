@@ -13,7 +13,8 @@ SRCS = \
 	src/value.c \
 	src/object.c \
 	src/table.c \
-	src/state.c
+	src/state.c \
+	src/vm.c
 
 DBGEXE     = dbg
 DBGOBJS    = src/main.dbg.o $(SRCS:.c=.dbg.o)

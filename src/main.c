@@ -5,6 +5,7 @@
 #include "object.h"
 #include "scanner.h"
 #include "state.h"
+#include "vm.h"
 
 #define EXIT_USAGE_ERROR 64
 #define EXIT_DATA_ERROR 65
@@ -70,8 +71,7 @@ static void run_repl()
     }
 
     struct obj_lambda *lambda = compile(&w, line);
-    (void) lambda;
-    // TODO: interpret(lambda);
+    interpret(&w, lambda);
   }
 
   wisp_state_free(&w);
@@ -90,8 +90,9 @@ static int run_file(const char *path)
   if (lambda == NULL)
     return EXIT_DATA_ERROR;
 
-  // TODO: interpret(lambda);
-  // TODO: interpret error => EXIT_SOFTWARE_ERROR
+  bool success = interpret(&w, lambda);
+  if (!success)
+    return EXIT_SOFTWARE_ERROR;
 
   wisp_state_free(&w);
   free(source);

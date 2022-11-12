@@ -111,8 +111,46 @@ static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
 
 static bool vm_run(struct vm *vm)
 {
-  // TODO
-  return false;
+  // TODO: Keep the frame ip in a register variable.
+  struct call_frame *frame = &vm->frames[vm->frame_count - 1];
+
+  #define READ_BYTE() (*frame->ip++)
+
+  for (;;) {
+    uint8_t instruction = READ_BYTE();
+
+    // TODO
+    switch (instruction) {
+    case OP_CONSTANT:
+      break;
+    case OP_NIL:
+      break;
+    case OP_CALL:
+      break;
+    case OP_DOT_CALL:
+      break;
+    case OP_CLOSURE:
+      break;
+    case OP_RETURN:
+      break;
+    case OP_CONS:
+      break;
+    case OP_CAR:
+      break;
+    case OP_CDR:
+      break;
+    case OP_DEFINE_GLOBAL:
+      break;
+    case OP_GET_LOCAL:
+      break;
+    case OP_GET_UPVALUE:
+      break;
+    case OP_GET_GLOBAL:
+      break;
+    }
+  }
+
+  #undef READ_BYTE
 }
 
 bool interpret(struct wisp_state *w, struct obj_lambda *lambda)

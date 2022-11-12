@@ -11,15 +11,15 @@ enum opcode {
   OP_NIL,
   OP_CALL,
   OP_DOT_CALL,
+  OP_CLOSURE,
+  OP_RETURN,
   OP_CONS,
   OP_CAR,
   OP_CDR,
   OP_DEFINE_GLOBAL,
-  OP_CLOSURE,
   OP_GET_LOCAL,
   OP_GET_UPVALUE,
   OP_GET_GLOBAL,
-  OP_RETURN,
 };
 
 struct chunk {

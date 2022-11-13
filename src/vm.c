@@ -63,9 +63,9 @@ static Value vm_stack_pop(struct vm *vm)
   return *vm->stack_top;
 }
 
-static Value vm_stack_peek(struct vm *vm)
+static Value vm_stack_peek(struct vm *vm, int distance)
 {
-  return vm->stack_top[-1];
+  return vm->stack_top[-1 - distance];
 }
 
 static void vm_free(struct vm *vm)
@@ -185,20 +185,24 @@ static bool vm_run(struct vm *vm)
       // TODO
       break;
     case OP_CONS: {
-      Value b = vm_stack_pop(vm);
-      Value a = vm_stack_pop(vm);
-      vm_stack_push(vm, OBJ_VAL(new_pair(&a, &b)));
+      Value b = vm_stack_peek(vm, 0);
+      Value a = vm_stack_peek(vm, 1);
+      struct obj_pair *cons = new_pair(&a, &b);
+
+      vm_stack_pop(vm);
+      vm_stack_pop(vm);
+      vm_stack_push(vm, OBJ_VAL(cons));
       break;
     }
     case OP_CAR:
-      if (!IS_PAIR(vm_stack_peek(vm))) {
+      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
         runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
       vm_stack_push(vm, OBJ_VAL(AS_PAIR(vm_stack_pop(vm))->car));
       break;
     case OP_CDR:
-      if (!IS_PAIR(vm_stack_peek(vm))) {
+      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
         runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
@@ -206,7 +210,7 @@ static bool vm_run(struct vm *vm)
       break;
     case OP_DEFINE_GLOBAL: {
       struct obj_string *name = READ_ATOM();
-      table_set(&vm->w->globals, name, vm_stack_peek(vm));
+      table_set(&vm->w->globals, name, vm_stack_peek(vm, 0));
       vm_stack_pop(vm);
       break;
     }

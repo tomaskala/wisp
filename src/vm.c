@@ -33,13 +33,16 @@ struct vm {
 
   // The next value to pop/peek;
   Value *stack_top;
+
+  // List of upvalues pointing to local variables still on the stack.
+  struct obj_upvalue *open_upvalues;
 };
 
 static void vm_stack_reset(struct vm *vm)
 {
   vm->frame_count = 0;
   vm->stack_top = vm->stack;
-  // TODO: Once upvalues are implemented, reset those as well.
+  vm->open_upvalues = NULL;
 }
 
 static void vm_init(struct vm *vm, struct wisp_state *w)
@@ -91,6 +94,30 @@ static void runtime_error(struct vm *vm, const char *format, ...)
   vm_stack_reset(vm);
 }
 
+static struct obj_upvalue *capture_upvalue(struct vm *vm, Value *local)
+{
+  struct obj_upvalue *prev = NULL;
+  struct obj_upvalue *upvalue = vm->open_upvalues;
+
+  while (upvalue != NULL && upvalue->location > local) {
+    prev = upvalue;
+    upvalue = upvalue->next;
+  }
+
+  if (upvalue != NULL && upvalue->location == local)
+    return upvalue;
+
+  struct obj_upvalue *captured = new_upvalue(local);
+  captured->next = upvalue;
+
+  if (prev == NULL)
+    vm->open_upvalues = captured;
+  else
+    prev->next = captured;
+
+  return captured;
+}
+
 static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
 {
   if (arg_count != closure->lambda->arity) {
@@ -139,9 +166,20 @@ static bool vm_run(struct vm *vm)
     case OP_DOT_CALL:
       // TODO
       break;
-    case OP_CLOSURE:
-      // TODO
+    case OP_CLOSURE: {
+      struct obj_lambda *lambda = AS_LAMBDA(READ_CONSTANT());
+      struct obj_closure *closure = new_closure(lambda);
+      vm_stack_push(vm, OBJ_VAL(closure));
+
+      for (int i = 0; i < closure->upvalue_count; ++i) {
+        uint8_t is_local = READ_BYTE();
+        uint8_t index = READ_BYTE();
+        closure->upvalues[i] = is_local
+                             ? capture_upvalue(vm, frame->slots + index)
+                             : frame->closure->upvalues[index];
+      }
       break;
+    }
     case OP_RETURN:
       // TODO
       break;

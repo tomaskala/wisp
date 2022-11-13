@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "table.h"
 #include "vm.h"
 
 #define FRAMES_MAX 64
@@ -66,6 +67,7 @@ static Value vm_stack_peek(struct vm *vm)
 
 static void vm_free(struct vm *vm)
 {
+  (void) vm;
   // TODO
 }
 

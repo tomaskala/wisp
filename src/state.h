@@ -2,6 +2,7 @@
 #define WISP_STATE_H
 
 #include "strpool.h"
+#include "table.h"
 
 struct wisp_state {
   // TODO: When strings are implemented, consider whether they should be
@@ -10,6 +11,8 @@ struct wisp_state {
   // TODO: Advantages: compare strings by identity, in general memory savings
   // TODO: Disadvantages: GC overhead (weak refs), memory overhead if used once
   struct str_pool atoms;
+
+  struct table globals;
 };
 
 void wisp_state_init(struct wisp_state *);

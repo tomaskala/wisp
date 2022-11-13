@@ -119,6 +119,7 @@ static bool vm_run(struct vm *vm)
   #define READ_BYTE() (*frame->ip++)
   #define READ_CONSTANT() \
     (frame->closure->lambda->chunk.constants.values[READ_BYTE()])
+  #define READ_ATOM() AS_ATOM(READ_CONSTANT())
 
   for (;;) {
     uint8_t instruction = READ_BYTE();
@@ -164,9 +165,12 @@ static bool vm_run(struct vm *vm)
       }
       vm_stack_push(vm, OBJ_VAL(AS_PAIR(vm_stack_pop(vm))->cdr));
       break;
-    case OP_DEFINE_GLOBAL:
-      // TODO
+    case OP_DEFINE_GLOBAL: {
+      struct obj_string *name = READ_ATOM();
+      table_set(&vm->w->globals, name, vm_stack_peek(vm));
+      vm_stack_pop(vm);
       break;
+    }
     case OP_GET_LOCAL: {
       uint8_t slot = READ_BYTE();
       vm_stack_push(vm, frame->slots[slot]);
@@ -177,12 +181,20 @@ static bool vm_run(struct vm *vm)
       vm_stack_push(vm, *frame->closure->upvalues[slot]->location);
       break;
     }
-    case OP_GET_GLOBAL:
-      // TODO
+    case OP_GET_GLOBAL: {
+      struct obj_string *name = READ_ATOM();
+      Value val;
+      if (!table_get(&vm->w->globals, name, &val)) {
+        runtime_error(vm, "Undefined variable: '%s'", name->chars);
+        return false;
+      }
+      vm_stack_push(vm, val);
       break;
+    }
     }
   }
 
+  #undef READ_ATOM
   #undef READ_CONSTANT
   #undef READ_BYTE
 }

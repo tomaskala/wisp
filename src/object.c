@@ -66,10 +66,10 @@ struct obj_upvalue *new_upvalue(Value *slot)
   return upvalue;
 }
 
-struct obj_cell *new_cell(Value *car, Value *cdr)
+struct obj_pair *new_pair(Value *car, Value *cdr)
 {
-  struct obj_cell *cell = ALLOCATE_OBJ(struct obj_cell, OBJ_CELL);
-  cell->car = car;
-  cell->cdr = cdr;
-  return cell;
+  struct obj_pair *pair = ALLOCATE_OBJ(struct obj_pair, OBJ_PAIR);
+  pair->car = car;
+  pair->cdr = cdr;
+  return pair;
 }

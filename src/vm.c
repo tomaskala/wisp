@@ -145,22 +145,22 @@ static bool vm_run(struct vm *vm)
     case OP_CONS: {
       Value b = vm_stack_pop(vm);
       Value a = vm_stack_pop(vm);
-      vm_stack_push(vm, OBJ_VAL(new_cell(&a, &b)));
+      vm_stack_push(vm, OBJ_VAL(new_pair(&a, &b)));
       break;
     }
     case OP_CAR:
-      if (!IS_CELL(vm_stack_peek(vm))) {
-        runtime_error(vm, "Operand must be a cons cell");
+      if (!IS_PAIR(vm_stack_peek(vm))) {
+        runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
-      vm_stack_push(vm, OBJ_VAL(AS_CELL(vm_stack_pop(vm))->car));
+      vm_stack_push(vm, OBJ_VAL(AS_PAIR(vm_stack_pop(vm))->car));
       break;
     case OP_CDR:
-      if (!IS_CELL(vm_stack_peek(vm))) {
-        runtime_error(vm, "Operand must be a cons cell");
+      if (!IS_PAIR(vm_stack_peek(vm))) {
+        runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
-      vm_stack_push(vm, OBJ_VAL(AS_CELL(vm_stack_pop(vm))->cdr));
+      vm_stack_push(vm, OBJ_VAL(AS_PAIR(vm_stack_pop(vm))->cdr));
       break;
     case OP_DEFINE_GLOBAL:
       // TODO

@@ -147,10 +147,16 @@ static bool vm_run(struct vm *vm)
       break;
     case OP_DEFINE_GLOBAL:
       break;
-    case OP_GET_LOCAL:
+    case OP_GET_LOCAL: {
+      uint8_t slot = READ_BYTE();
+      vm_stack_push(vm, frame->slots[slot]);
       break;
-    case OP_GET_UPVALUE:
+    }
+    case OP_GET_UPVALUE: {
+      uint8_t slot = READ_BYTE();
+      vm_stack_push(vm, *frame->closure->upvalues[slot]->location);
       break;
+    }
     case OP_GET_GLOBAL:
       break;
     }

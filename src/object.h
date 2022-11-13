@@ -13,6 +13,7 @@ enum obj_type {
   OBJ_CLOSURE,
   OBJ_LAMBDA,
   OBJ_UPVALUE,
+  OBJ_CELL,
 };
 
 struct obj {
@@ -49,6 +50,12 @@ struct obj_upvalue {
   struct obj_upvalue *next;
 };
 
+struct obj_cell {
+  struct obj obj;
+  Value *car;
+  Value *cdr;
+};
+
 struct obj_string *copy_string(enum obj_type, const char *, size_t, uint64_t);
 
 struct obj_closure *new_closure(struct obj_lambda *);
@@ -56,5 +63,7 @@ struct obj_closure *new_closure(struct obj_lambda *);
 struct obj_lambda *new_lambda();
 
 struct obj_upvalue *new_upvalue(Value *);
+
+struct obj_cell *new_cell(Value *, Value *);
 
 #endif

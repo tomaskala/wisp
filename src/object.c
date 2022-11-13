@@ -65,3 +65,11 @@ struct obj_upvalue *new_upvalue(Value *slot)
   upvalue->next = NULL;
   return upvalue;
 }
+
+struct obj_cell *new_cell(Value *car, Value *cdr)
+{
+  struct obj_cell *cell = ALLOCATE_OBJ(struct obj_cell, OBJ_CELL);
+  cell->car = car;
+  cell->cdr = cdr;
+  return cell;
+}

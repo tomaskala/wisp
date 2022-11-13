@@ -139,8 +139,12 @@ static bool vm_run(struct vm *vm)
       break;
     case OP_RETURN:
       break;
-    case OP_CONS:
+    case OP_CONS: {
+      Value b = vm_stack_pop(vm);
+      Value a = vm_stack_pop(vm);
+      vm_stack_push(vm, OBJ_VAL(new_cell(&a, &b)));
       break;
+    }
     case OP_CAR:
       break;
     case OP_CDR:

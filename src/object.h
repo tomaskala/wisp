@@ -5,6 +5,20 @@
 #include "common.h"
 #include "value.h"
 
+#define OBJ_TYPE(value)   (AS_OBJ(value)->type)
+
+#define IS_ATOM(value)    is_obj_type(value, OBJ_ATOM)
+#define IS_CLOSURE(value) is_obj_type(value, OBJ_CLOSURE)
+#define IS_LAMBDA(value)  is_obj_type(value, OBJ_LAMBDA)
+#define IS_UPVALUE(value) is_obj_type(value, OBJ_UPVALUE)
+#define IS_CELL(value)    is_obj_type(value, OBJ_CELL)
+
+#define AS_ATOM(value)    ((struct obj_string *)  AS_OBJ(value))
+#define AS_CLOSURE(value) ((struct obj_closure *) AS_OBJ(value))
+#define AS_LAMBDA(value)  ((struct obj_lambda *)  AS_OBJ(value))
+#define AS_UPVALUE(value) ((struct obj_upvalue *) AS_OBJ(value))
+#define AS_CELL(value)    ((struct obj_cell *)    AS_OBJ(value))
+
 // TODO: Switch to #defined constants with a particular meaning?
 // TODO: Motivation: Fast tests using bit patterns if needed,
 // TODO: visual distinction between string types for atoms & real strings.
@@ -19,6 +33,11 @@ enum obj_type {
 struct obj {
   enum obj_type type;
 };
+
+static inline bool is_obj_type(Value value, enum obj_type type)
+{
+  return IS_OBJ(value) && OBJ_TYPE(value) == type;
+}
 
 // TODO: Switch to flexible array members.
 struct obj_string {

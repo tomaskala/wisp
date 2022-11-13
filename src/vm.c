@@ -118,6 +118,16 @@ static struct obj_upvalue *capture_upvalue(struct vm *vm, Value *local)
   return captured;
 }
 
+static void close_upvalues(struct vm *vm, Value *last)
+{
+  while (vm->open_upvalues != NULL && vm->open_upvalues->location >= last) {
+    struct obj_upvalue *upvalue = vm->open_upvalues;
+    upvalue->closed = *upvalue->location;
+    upvalue->location = &upvalue->closed;
+    vm->open_upvalues = upvalue->next;
+  }
+}
+
 static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
 {
   if (arg_count != closure->lambda->arity) {
@@ -181,9 +191,21 @@ static bool vm_run(struct vm *vm)
       }
       break;
     }
-    case OP_RETURN:
-      // TODO
+    case OP_RETURN: {
+      Value result = vm_stack_pop(vm);
+      close_upvalues(vm, frame->slots);
+      vm->frame_count--;
+
+      if (vm->frame_count == 0) {
+        vm_stack_pop(vm);
+        return true;
+      }
+
+      vm->stack_top = frame->slots;
+      vm_stack_push(vm, result);
+      frame = &vm->frames[vm->frame_count - 1];
       break;
+    }
     case OP_CONS: {
       Value b = vm_stack_peek(vm, 0);
       Value a = vm_stack_peek(vm, 1);

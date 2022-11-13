@@ -115,15 +115,21 @@ static bool vm_run(struct vm *vm)
   struct call_frame *frame = &vm->frames[vm->frame_count - 1];
 
   #define READ_BYTE() (*frame->ip++)
+  #define READ_CONSTANT() \
+    (frame->closure->lambda->chunk.constants.values[READ_BYTE()])
 
   for (;;) {
     uint8_t instruction = READ_BYTE();
 
     // TODO
     switch (instruction) {
-    case OP_CONSTANT:
+    case OP_CONSTANT: {
+      Value constant = READ_CONSTANT();
+      vm_stack_push(vm, constant);
       break;
+    }
     case OP_NIL:
+      vm_stack_push(vm, NIL_VAL);
       break;
     case OP_CALL:
       break;
@@ -150,6 +156,7 @@ static bool vm_run(struct vm *vm)
     }
   }
 
+  #undef READ_CONSTANT
   #undef READ_BYTE
 }
 

@@ -1,5 +1,5 @@
-#ifndef WISP_TABLE_H
-#define WISP_TABLE_H
+#ifndef WISP_STRPOOL_H
+#define WISP_STRPOOL_H
 
 // Source: https://nullprogram.com/blog/2022/08/08/
 

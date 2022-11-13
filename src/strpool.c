@@ -1,7 +1,7 @@
 #include <string.h>
 
 #include "memory.h"
-#include "table.h"
+#include "strpool.h"
 
 #define CAPACITY(exp) (1 << (exp))
 

@@ -1,7 +1,7 @@
 #ifndef WISP_STATE_H
 #define WISP_STATE_H
 
-#include "table.h"
+#include "strpool.h"
 
 struct wisp_state {
   // TODO: When strings are implemented, consider whether they should be

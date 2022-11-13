@@ -12,7 +12,7 @@ SRCS = \
 	src/compiler.c \
 	src/value.c \
 	src/object.c \
-	src/table.c \
+	src/strpool.c \
 	src/state.c \
 	src/vm.c
 

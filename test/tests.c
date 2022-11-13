@@ -6,7 +6,7 @@
 #include "../src/scanner.h"
 #include "../src/memory.h"
 #include "../src/object.h"
-#include "../src/table.h"
+#include "../src/strpool.h"
 
 static int count_fail = 0;
 static int count_pass = 0;

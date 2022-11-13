@@ -121,7 +121,6 @@ static bool vm_run(struct vm *vm)
   for (;;) {
     uint8_t instruction = READ_BYTE();
 
-    // TODO
     switch (instruction) {
     case OP_CONSTANT: {
       Value constant = READ_CONSTANT();
@@ -132,12 +131,16 @@ static bool vm_run(struct vm *vm)
       vm_stack_push(vm, NIL_VAL);
       break;
     case OP_CALL:
+      // TODO
       break;
     case OP_DOT_CALL:
+      // TODO
       break;
     case OP_CLOSURE:
+      // TODO
       break;
     case OP_RETURN:
+      // TODO
       break;
     case OP_CONS: {
       Value b = vm_stack_pop(vm);
@@ -146,10 +149,21 @@ static bool vm_run(struct vm *vm)
       break;
     }
     case OP_CAR:
+      if (!IS_CELL(vm_stack_peek(vm))) {
+        runtime_error(vm, "Operand must be a cons cell");
+        return false;
+      }
+      vm_stack_push(vm, OBJ_VAL(AS_CELL(vm_stack_pop(vm))->car));
       break;
     case OP_CDR:
+      if (!IS_CELL(vm_stack_peek(vm))) {
+        runtime_error(vm, "Operand must be a cons cell");
+        return false;
+      }
+      vm_stack_push(vm, OBJ_VAL(AS_CELL(vm_stack_pop(vm))->cdr));
       break;
     case OP_DEFINE_GLOBAL:
+      // TODO
       break;
     case OP_GET_LOCAL: {
       uint8_t slot = READ_BYTE();
@@ -162,6 +176,7 @@ static bool vm_run(struct vm *vm)
       break;
     }
     case OP_GET_GLOBAL:
+      // TODO
       break;
     }
   }

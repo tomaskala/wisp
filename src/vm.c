@@ -141,6 +141,7 @@ static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
 static bool vm_run(struct vm *vm)
 {
   // TODO: Keep the frame ip in a register variable.
+  // TODO: Implement optional direct threading.
   struct call_frame *frame = &vm->frames[vm->frame_count - 1];
 
   #define READ_BYTE() (*frame->ip++)

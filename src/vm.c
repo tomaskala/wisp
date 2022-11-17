@@ -130,8 +130,20 @@ static void close_upvalues(struct vm *vm, Value *last)
 
 static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
 {
-  if (arg_count != closure->lambda->arity) {
-    runtime_error(vm, "Expected %" PRIu8 " arguments but got %" PRIu8,
+  if (closure->lambda->has_param_list) {
+    if (arg_count < closure->lambda->arity) {
+      runtime_error(vm,
+          "Expected at least %" PRIu8 " arguments but got %" PRIu8,
+          closure->lambda->arity, arg_count);
+      return false;
+    }
+
+    // TODO: Collect the extra arguments in a list and provide it as the
+    // TODO: last argument.
+    // TODO: The dotted parameter is not counted in the lambda's arity!
+  } else if (arg_count != closure->lambda->arity) {
+    runtime_error(vm,
+        "Expected %" PRIu8 " arguments but got %" PRIu8,
         closure->lambda->arity, arg_count);
     return false;
   }
@@ -146,6 +158,22 @@ static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
   frame->ip = closure->lambda->chunk.code;
   frame->slots = vm->stack_top - arg_count - 1;
   return true;
+}
+
+static bool call_value(struct vm *vm, Value callee, uint8_t arg_count)
+{
+  if (IS_OBJ(callee)) {
+    switch (OBJ_TYPE(callee)) {
+    case OBJ_CLOSURE:
+      return call(vm, AS_CLOSURE(callee), arg_count);
+    // TODO: Native functions.
+    default:
+      break;
+    }
+  }
+
+  runtime_error(vm, "Can only call functions");
+  return false;
 }
 
 static bool vm_run(struct vm *vm)
@@ -171,11 +199,20 @@ static bool vm_run(struct vm *vm)
     case OP_NIL:
       vm_stack_push(vm, NIL_VAL);
       break;
-    case OP_CALL:
-      // TODO
+    case OP_CALL: {
+      // TODO: obj_lambda.has_param_list = false => require n arguments
+      // TODO: obj_lambda.has_param_list = true  => allow > n arguments
+      uint8_t arg_count = READ_BYTE();
+
+      if (!call_value(vm, vm_stack_peek(vm, arg_count), arg_count))
+        return false;
+
+      frame = &vm->frames[vm->frame_count - 1];
       break;
+    }
     case OP_DOT_CALL:
-      // TODO
+      // TODO: the last processed argument was the dotted one
+      // TODO: the dotted argument is not counted in arg_count!
       break;
     case OP_CLOSURE: {
       struct obj_lambda *lambda = AS_LAMBDA(READ_CONSTANT());

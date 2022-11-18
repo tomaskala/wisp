@@ -261,6 +261,7 @@ static bool vm_run(struct vm *vm)
         runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
+
       vm_stack_push(vm, vm->w->cells.values[AS_CAR(vm_stack_pop(vm))]);
       break;
     case OP_CDR:
@@ -268,6 +269,7 @@ static bool vm_run(struct vm *vm)
         runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
+
       vm_stack_push(vm, vm->w->cells.values[AS_CDR(vm_stack_pop(vm))]);
       break;
     case OP_DEFINE_GLOBAL: {
@@ -289,10 +291,12 @@ static bool vm_run(struct vm *vm)
     case OP_GET_GLOBAL: {
       struct obj_string *name = READ_ATOM();
       Value val;
+
       if (!table_get(&vm->w->globals, name, &val)) {
         runtime_error(vm, "Undefined variable: '%s'", name->chars);
         return false;
       }
+
       vm_stack_push(vm, val);
       break;
     }

@@ -3,6 +3,7 @@
 
 #include "strpool.h"
 #include "table.h"
+#include "value.h"
 
 struct wisp_state {
   // TODO: When strings are implemented, consider whether they should be
@@ -13,6 +14,8 @@ struct wisp_state {
   struct str_pool atoms;
 
   struct table globals;
+
+  struct value_array cells;
 };
 
 void wisp_state_init(struct wisp_state *);

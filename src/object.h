@@ -11,13 +11,11 @@
 #define IS_CLOSURE(value) is_obj_type(value, OBJ_CLOSURE)
 #define IS_LAMBDA(value)  is_obj_type(value, OBJ_LAMBDA)
 #define IS_UPVALUE(value) is_obj_type(value, OBJ_UPVALUE)
-#define IS_PAIR(value)    is_obj_type(value, OBJ_PAIR)
 
 #define AS_ATOM(value)    ((struct obj_string *)  AS_OBJ(value))
 #define AS_CLOSURE(value) ((struct obj_closure *) AS_OBJ(value))
 #define AS_LAMBDA(value)  ((struct obj_lambda *)  AS_OBJ(value))
 #define AS_UPVALUE(value) ((struct obj_upvalue *) AS_OBJ(value))
-#define AS_PAIR(value)    ((struct obj_pair *)    AS_OBJ(value))
 
 // TODO: Switch to #defined constants with a particular meaning?
 // TODO: Motivation: Fast tests using bit patterns if needed,
@@ -27,7 +25,6 @@ enum obj_type {
   OBJ_CLOSURE,
   OBJ_LAMBDA,
   OBJ_UPVALUE,
-  OBJ_PAIR,
 };
 
 struct obj {
@@ -69,12 +66,6 @@ struct obj_upvalue {
   struct obj_upvalue *next;
 };
 
-struct obj_pair {
-  struct obj obj;
-  Value *car;
-  Value *cdr;
-};
-
 struct obj_string *copy_string(enum obj_type, const char *, size_t, uint64_t);
 
 struct obj_closure *new_closure(struct obj_lambda *);
@@ -82,7 +73,5 @@ struct obj_closure *new_closure(struct obj_lambda *);
 struct obj_lambda *new_lambda();
 
 struct obj_upvalue *new_upvalue(Value *);
-
-struct obj_pair *new_pair(Value *, Value *);
 
 #endif

@@ -65,11 +65,3 @@ struct obj_upvalue *new_upvalue(Value *slot)
   upvalue->next = NULL;
   return upvalue;
 }
-
-struct obj_pair *new_pair(Value *car, Value *cdr)
-{
-  struct obj_pair *pair = ALLOCATE_OBJ(struct obj_pair, OBJ_PAIR);
-  pair->car = car;
-  pair->cdr = cdr;
-  return pair;
-}

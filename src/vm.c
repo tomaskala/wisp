@@ -246,26 +246,29 @@ static bool vm_run(struct vm *vm)
     case OP_CONS: {
       Value b = vm_stack_peek(vm, 0);
       Value a = vm_stack_peek(vm, 1);
-      struct obj_pair *cons = new_pair(&a, &b);
+
+      int car = vm->w->cells.count;
+      value_array_write(&vm->w->cells, a);
+      value_array_write(&vm->w->cells, b);
 
       vm_stack_pop(vm);
       vm_stack_pop(vm);
-      vm_stack_push(vm, OBJ_VAL(cons));
+      vm_stack_push(vm, CONS_VAL(car));
       break;
     }
     case OP_CAR:
-      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
+      if (!IS_CONS(vm_stack_peek(vm, 0))) {
         runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
-      vm_stack_push(vm, OBJ_VAL(AS_PAIR(vm_stack_pop(vm))->car));
+      vm_stack_push(vm, vm->w->cells.values[AS_CAR(vm_stack_pop(vm))]);
       break;
     case OP_CDR:
-      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
+      if (!IS_CONS(vm_stack_peek(vm, 0))) {
         runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
-      vm_stack_push(vm, OBJ_VAL(AS_PAIR(vm_stack_pop(vm))->cdr));
+      vm_stack_push(vm, vm->w->cells.values[AS_CDR(vm_stack_pop(vm))]);
       break;
     case OP_DEFINE_GLOBAL: {
       struct obj_string *name = READ_ATOM();

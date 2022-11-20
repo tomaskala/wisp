@@ -219,8 +219,6 @@ static bool vm_run(struct vm *vm)
       vm_stack_push(vm, NIL_VAL);
       break;
     case OP_CALL: {
-      // TODO: obj_lambda.has_param_list = false => require n arguments
-      // TODO: obj_lambda.has_param_list = true  => allow > n arguments
       uint8_t arg_count = READ_BYTE();
 
       if (!call_value(vm, vm_stack_peek(vm, arg_count), arg_count))
@@ -229,10 +227,34 @@ static bool vm_run(struct vm *vm)
       frame = &vm->frames[vm->frame_count - 1];
       break;
     }
-    case OP_DOT_CALL:
-      // TODO: the last processed argument was the dotted one
-      // TODO: the dotted argument is not counted in arg_count!
+    case OP_DOT_CALL: {
+      if (!IS_CONS(vm_stack_peek(vm, 0))) {
+        runtime_error(vm, "A lambda must be applied to a cons pair");
+        return false;
+      }
+
+      uint8_t arg_count = READ_BYTE();
+      Value cons = vm_stack_pop(vm);
+
+      do {
+        Value car = vm->w->cells.values[AS_CAR(cons)];
+        Value cdr = vm->w->cells.values[AS_CDR(cons)];
+        vm_stack_push(vm, car);
+        arg_count++;
+        cons = cdr;
+      } while (IS_CONS(cons));
+
+      if (!IS_NIL(cons)) {
+        runtime_error(vm, "Attempt to apply a lambda to a non-list pair");
+        return false;
+      }
+
+      if (!call_value(vm, vm_stack_peek(vm, arg_count), arg_count))
+        return false;
+
+      frame = &vm->frames[vm->frame_count - 1];
       break;
+    }
     case OP_CLOSURE: {
       struct obj_lambda *lambda = AS_LAMBDA(READ_CONSTANT());
       struct obj_closure *closure = new_closure(lambda);

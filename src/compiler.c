@@ -421,7 +421,6 @@ static void call(struct compiler *c)
 
   // Compile the optional dotted argument, which, for a function call,
   // must be a quoted list (or an identifier associated with one).
-  // TODO: Compile error for different S-expressions?
   if (match(c->parser, TOKEN_DOT)) {
     opcode = OP_DOT_CALL;
     sexp(c, false);

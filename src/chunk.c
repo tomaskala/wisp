@@ -7,6 +7,7 @@ void chunk_init(struct chunk *chunk)
   chunk->count = 0;
   chunk->code = NULL;
   chunk->lines = NULL;
+  value_array_init(&chunk->constants);
 }
 
 void chunk_write(struct chunk *chunk, uint8_t codepoint, int line)

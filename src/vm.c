@@ -131,16 +131,35 @@ static void close_upvalues(struct vm *vm, Value *last)
 static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
 {
   if (closure->lambda->has_param_list) {
-    if (arg_count < closure->lambda->arity) {
+    // Either (lambda params expr) or (lambda (p1 p2 ... pn . params) expr)
+    // Subtract 1 from the lambda's arity which includes the parameter list.
+    if (arg_count < closure->lambda->arity - 1) {
       runtime_error(vm,
           "Expected at least %" PRIu8 " arguments but got %" PRIu8,
-          closure->lambda->arity, arg_count);
+          closure->lambda->arity - 1, arg_count);
       return false;
     }
 
-    // TODO: Collect the extra arguments in a list and provide it as the
-    // TODO: last argument.
-    // TODO: The dotted parameter is not counted in the lambda's arity!
+    // Need to collect all extra arguments in a list and push it as the last
+    // argument. Even if no extra arguments have been provided, we need to push
+    // an empty list.
+    vm_stack_push(vm, NIL_VAL);
+    uint8_t extra_args = arg_count - (closure->lambda->arity - 1);
+
+    if (extra_args > 0) {
+      for (; extra_args > 0; --extra_args) {
+        Value b = vm_stack_peek(vm, 0);
+        Value a = vm_stack_peek(vm, 1);
+
+        int car = vm->w->cells.count;
+        value_array_write(&vm->w->cells, a);
+        value_array_write(&vm->w->cells, b);
+
+        vm_stack_pop(vm);
+        vm_stack_pop(vm);
+        vm_stack_push(vm, CONS_VAL(car));
+      }
+    }
   } else if (arg_count != closure->lambda->arity) {
     runtime_error(vm,
         "Expected %" PRIu8 " arguments but got %" PRIu8,

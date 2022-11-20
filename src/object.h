@@ -66,8 +66,8 @@ struct obj_closure {
 struct obj_lambda {
   struct obj obj;
 
-  // Number of arguments the lambda expects.
-  // TODO: Document whether it includes the param list if 'has_param_list' is true.
+  // Number of arguments the lambda expects. If 'has_param_list' is true, this
+  // includes the parameter list.
   int arity;
 
   // Number of upvalues closed over.

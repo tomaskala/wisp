@@ -323,6 +323,13 @@ static void lambda(struct compiler *c)
 
     if (match(inner.parser, TOKEN_DOT)) {
       // (lambda (p1 p2 ... pn . params) expr)
+      inner.lambda->arity++;
+
+      if (inner.lambda->arity > UINT8_MAX)
+        error_at_current(inner.parser,
+            "Can't have more than " XSTR(UINT8_MAX) " parameters, "
+            "including the dotted one");
+
       uint8_t constant = read_identifier(&inner, "Expect parameter list name");
       define_variable(&inner, constant);
       inner.lambda->has_param_list = true;
@@ -332,6 +339,7 @@ static void lambda(struct compiler *c)
         "Expect ')' at the end of a parameter list");
   } else {
     // (lambda params expr), equivalent to (lambda ( . params) expr)
+    inner.lambda->arity++;
     uint8_t constant = read_identifier(&inner, "Expect parameter list name");
     define_variable(&inner, constant);
     inner.lambda->has_param_list = true;

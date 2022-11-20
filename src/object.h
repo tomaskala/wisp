@@ -39,30 +39,61 @@ static inline bool is_obj_type(Value value, enum obj_type type)
 // TODO: Switch to flexible array members.
 struct obj_string {
   struct obj obj;
+
+  // Null-terminated bytes of the string.
   char *chars;
+
+  // Number of bytes in the string.
   size_t len;
+
+  // Hash of the string contents.
   uint64_t hash;
 };
 
 struct obj_closure {
   struct obj obj;
+
+  // The lambda this closure is an instance of.
   struct obj_lambda *lambda;
+
+  // The upvalues this closure has closed over.
   struct obj_upvalue **upvalues;
-  int upvalue_count;
+
+  // Number of upvalues closed over.
+  int upvalue_count;  // TODO: Remove? Accessible from obj_lambda.
 };
 
 struct obj_lambda {
   struct obj obj;
+
+  // Number of arguments the lambda expects.
+  // TODO: Document whether it includes the param list if 'has_param_list' is true.
   int arity;
+
+  // Number of upvalues closed over.
   int upvalue_count;
+
+  // Whether the lambda accepts an arbitrary number of arguments to be
+  // collected in a list.
   bool has_param_list;
+
+  // Bytecode of the lambda body.
   struct chunk chunk;
 };
 
 struct obj_upvalue {
   struct obj obj;
+
+  // Pointer to the variable this upvalue is referencing. Either its location
+  // on the stack (if the upvalue is open), or the 'closed' field (if the
+  // upvalue is closed).
   Value *location;
+
+  // If the upvalue is closed, the value of the referenced variable is moved
+  // here from the stack.
   Value closed;
+
+  // Open upvalues are stored in a linked list.
   struct obj_upvalue *next;
 };
 

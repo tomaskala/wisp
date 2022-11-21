@@ -4,6 +4,10 @@
 #include "table.h"
 #include "vm.h"
 
+#ifdef DEBUG_TRACE_EXECUTION
+#include "debug.h"
+#endif
+
 #define FRAMES_MAX 64
 #define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 
@@ -207,6 +211,17 @@ static bool vm_run(struct vm *vm)
   #define READ_ATOM() AS_ATOM(READ_CONSTANT())
 
   for (;;) {
+#ifdef DEBUG_TRACE_EXECUTION
+    printf(" ");
+    for (Value *slot = vm->stack; slot < vm->stack_top; ++slot) {
+      printf("[ ");
+      value_print(*slot);
+      printf(" ]");
+    }
+    printf("\n");
+    disassemble_instruction(&frame->closure->lambda->chunk,
+        (int) (frame->ip - frame->closure->lambda->chunk.code));
+#endif
     uint8_t instruction = READ_BYTE();
 
     switch (instruction) {

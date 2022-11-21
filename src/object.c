@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <string.h>
 
 #include "memory.h"
@@ -64,4 +65,22 @@ struct obj_upvalue *new_upvalue(Value *slot)
   upvalue->closed = NIL_VAL;
   upvalue->next = NULL;
   return upvalue;
+}
+
+void object_print(Value val)
+{
+  switch (OBJ_TYPE(val)) {
+  case OBJ_ATOM:
+    printf("%s", AS_ATOM(val)->chars);
+    break;
+  case OBJ_CLOSURE:
+    printf("closure");
+    break;
+  case OBJ_LAMBDA:
+    printf("lambda");
+    break;
+  case OBJ_UPVALUE:
+    printf("upvalue");
+    break;
+  }
 }

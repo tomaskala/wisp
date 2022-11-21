@@ -47,4 +47,6 @@ void value_array_write(struct value_array *, Value);
 
 void value_array_free(struct value_array *);
 
+void value_print(Value);
+
 #endif

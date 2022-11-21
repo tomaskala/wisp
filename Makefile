@@ -18,8 +18,9 @@ SRCS = \
 	src/table.c
 
 DBGEXE     = dbg
-DBGOBJS    = src/main.dbg.o $(SRCS:.c=.dbg.o)
-DBGCFLAGS  = -Og -g -fsanitize=address -fsanitize=leak -fsanitize=undefined
+DBGOBJS    = src/main.dbg.o $(SRCS:.c=.dbg.o) src/debug.dbg.o
+DBGCFLAGS  = -Og -g -fsanitize=address -fsanitize=leak -fsanitize=undefined \
+						 -DDEBUG_TRACE_EXECUTION
 DBGLDFLAGS = -fsanitize=address -fsanitize=leak -fsanitize=undefined
 
 RELEXE     = wisp

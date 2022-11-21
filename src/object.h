@@ -105,4 +105,6 @@ struct obj_lambda *new_lambda();
 
 struct obj_upvalue *new_upvalue(Value *);
 
+void object_print(Value);
+
 #endif

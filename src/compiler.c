@@ -598,5 +598,8 @@ struct obj_lambda *compile(struct wisp_state *w, const char *source)
   while (!match(&p, TOKEN_EOF))
     sexp(&c, false);
 
+  emit_byte(&c, OP_NIL);
+  emit_byte(&c, OP_RETURN);
+
   return p.had_error ? NULL : c.lambda;
 }

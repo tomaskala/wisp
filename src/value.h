@@ -35,6 +35,8 @@ typedef struct {
 #define OBJ_VAL(o)     ((Value) {VAL_OBJ,  {.obj = (struct obj *) (o)}})
 #define CONS_VAL(h)    ((Value) {VAL_CONS, {.hp = (h)}})
 
+void value_print(Value);
+
 struct value_array {
   int capacity;
   int count;
@@ -46,7 +48,5 @@ void value_array_init(struct value_array *);
 void value_array_write(struct value_array *, Value);
 
 void value_array_free(struct value_array *);
-
-void value_print(Value);
 
 #endif

@@ -97,13 +97,13 @@ struct obj_upvalue {
   struct obj_upvalue *next;
 };
 
-struct obj_string *copy_string(enum obj_type, const char *, size_t, uint64_t);
+struct obj_string *string_copy(enum obj_type, const char *, size_t, uint64_t);
 
-struct obj_closure *new_closure(struct obj_lambda *);
+struct obj_closure *closure_new(struct obj_lambda *);
 
-struct obj_lambda *new_lambda();
+struct obj_lambda *lambda_new();
 
-struct obj_upvalue *new_upvalue(Value *);
+struct obj_upvalue *upvalue_new(Value *);
 
 void object_print(Value);
 

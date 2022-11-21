@@ -79,7 +79,7 @@ struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
 
     if (pool->ht[i] == NULL) {
       pool->count++;
-      pool->ht[i] = copy_string(pool->str_type, str, len, hash);
+      pool->ht[i] = string_copy(pool->str_type, str, len, hash);
       return pool->ht[i];
     } else if (pool->ht[i]->len == len
         && memcmp(pool->ht[i]->chars, str, len) == 0)

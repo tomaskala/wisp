@@ -99,7 +99,7 @@ static void compiler_init(struct compiler *c, struct wisp_state *w,
   c->type = type;
   c->local_count = 0;
   c->scope_depth = 0;
-  c->lambda = new_lambda();
+  c->lambda = lambda_new();
 }
 
 static void error_at(struct parser *p, struct token tok, const char *msg)

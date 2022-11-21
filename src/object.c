@@ -24,7 +24,7 @@ static struct obj_string *allocate_string(enum obj_type str_type, char *chars,
   return str;
 }
 
-struct obj_string *copy_string(enum obj_type str_type, const char *chars,
+struct obj_string *string_copy(enum obj_type str_type, const char *chars,
     size_t len, uint64_t hash)
 {
   char *heap_chars = ALLOCATE(char, len + 1);
@@ -33,7 +33,7 @@ struct obj_string *copy_string(enum obj_type str_type, const char *chars,
   return allocate_string(str_type, heap_chars, len, hash);
 }
 
-struct obj_closure *new_closure(struct obj_lambda *lambda)
+struct obj_closure *closure_new(struct obj_lambda *lambda)
 {
   struct obj_upvalue **upvalues = ALLOCATE(struct obj_upvalue *,
       lambda->upvalue_count);
@@ -48,7 +48,7 @@ struct obj_closure *new_closure(struct obj_lambda *lambda)
   return closure;
 }
 
-struct obj_lambda *new_lambda()
+struct obj_lambda *lambda_new()
 {
   struct obj_lambda *lambda = ALLOCATE_OBJ(struct obj_lambda, OBJ_LAMBDA);
   lambda->arity = 0;
@@ -58,7 +58,7 @@ struct obj_lambda *new_lambda()
   return lambda;
 }
 
-struct obj_upvalue *new_upvalue(Value *slot)
+struct obj_upvalue *upvalue_new(Value *slot)
 {
   struct obj_upvalue *upvalue = ALLOCATE_OBJ(struct obj_upvalue, OBJ_UPVALUE);
   upvalue->location = slot;

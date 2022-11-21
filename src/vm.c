@@ -111,7 +111,7 @@ static struct obj_upvalue *capture_upvalue(struct vm *vm, Value *local)
   if (upvalue != NULL && upvalue->location == local)
     return upvalue;
 
-  struct obj_upvalue *captured = new_upvalue(local);
+  struct obj_upvalue *captured = upvalue_new(local);
   captured->next = upvalue;
 
   if (prev == NULL)
@@ -272,7 +272,7 @@ static bool vm_run(struct vm *vm)
     }
     case OP_CLOSURE: {
       struct obj_lambda *lambda = AS_LAMBDA(READ_CONSTANT());
-      struct obj_closure *closure = new_closure(lambda);
+      struct obj_closure *closure = closure_new(lambda);
       vm_stack_push(vm, OBJ_VAL(closure));
 
       for (int i = 0; i < closure->upvalue_count; ++i) {
@@ -370,7 +370,7 @@ bool interpret(struct wisp_state *w, struct obj_lambda *lambda)
   vm_init(&vm, w);
 
   vm_stack_push(&vm, OBJ_VAL(lambda));
-  struct obj_closure *closure = new_closure(lambda);
+  struct obj_closure *closure = closure_new(lambda);
   vm_stack_pop(&vm);
   vm_stack_push(&vm, OBJ_VAL(closure));
 

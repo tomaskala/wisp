@@ -522,7 +522,7 @@ static void list(struct compiler *c)
 {
   if (check(c->parser, TOKEN_RIGHT_PAREN))
     // '() evaluates to nil.
-    emit_constant(c, NIL_VAL);
+    emit_byte(c, OP_NIL);
   else if (match(c->parser, TOKEN_DOT))
     // '( . a) evaluates to a
     sexp(c, true);
@@ -539,7 +539,7 @@ static void list(struct compiler *c)
     if (match(c->parser, TOKEN_DOT))
       sexp(c, true);
     else
-      emit_constant(c, NIL_VAL);
+      emit_byte(c, OP_NIL);
 
     for (int i = 0; i < elements - 1; ++i)
       emit_byte(c, OP_CONS);

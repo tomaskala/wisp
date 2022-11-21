@@ -30,6 +30,8 @@ RELLDFLAGS =
 
 TSTEXE     = tests
 TSTOBJS    = test/tests.tst.o $(SRCS:.c=.tst.o)
+TSTCFLAGS  = -Og -g -fsanitize=address -fsanitize=leak -fsanitize=undefined
+TSTLDFLAGS = -fsanitize=address -fsanitize=leak -fsanitize=undefined
 
 .PHONY: all
 all: $(RELEXE)
@@ -48,7 +50,7 @@ $(DBGEXE): $(DBGOBJS)
 	$(CC) $(LDFLAGS) $(DBGLDFLAGS) -o $(DBGEXE) $(DBGOBJS) $(LDLIBS)
 
 $(TSTEXE): $(TSTOBJS)
-	$(CC) $(LDFLAGS) $(DBGLDFLAGS) -o $(TSTEXE) $(TSTOBJS) $(LDLIBS)
+	$(CC) $(LDFLAGS) $(TSTLDFLAGS) -o $(TSTEXE) $(TSTOBJS) $(LDLIBS)
 
 .PHONY: clean
 clean:
@@ -64,4 +66,4 @@ clean:
 
 .SUFFIXES: .c .tst.o
 .c.tst.o:
-	$(CC) $(CFLAGS) $(DBGCFLAGS) -o $@ -c $<
+	$(CC) $(CFLAGS) $(TSTCFLAGS) -o $@ -c $<

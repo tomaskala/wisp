@@ -13,9 +13,6 @@ void value_print(Value val)
   case VAL_NUM:
     printf("%g", AS_NUM(val));
     break;
-  case VAL_CONS:
-    printf("cons");  // TODO: Finish once VList is implemented.
-    break;
   case VAL_OBJ:
     object_print(val);
     break;

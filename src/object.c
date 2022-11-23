@@ -67,6 +67,14 @@ struct obj_upvalue *upvalue_new(Value *slot)
   return upvalue;
 }
 
+struct obj_pair *pair_new(Value car, Value cdr)
+{
+  struct obj_pair *pair = ALLOCATE_OBJ(struct obj_pair, OBJ_PAIR);
+  pair->car = car;
+  pair->cdr = cdr;
+  return pair;
+}
+
 void object_print(Value val)
 {
   switch (OBJ_TYPE(val)) {
@@ -82,5 +90,23 @@ void object_print(Value val)
   case OBJ_UPVALUE:
     printf("upvalue");
     break;
+  case OBJ_PAIR: {
+    for (putchar('(');; putchar(' ')) {
+      struct obj_pair *pair = AS_PAIR(val);
+      value_print(pair->car);
+      val = pair->cdr;
+
+      if (IS_NIL(val))
+        break;
+      else if (!IS_PAIR(val)) {
+        printf(" . ");
+        value_print(val);
+        break;
+      }
+    }
+
+    putchar(')');
+    break;
+  }
   }
 }

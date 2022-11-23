@@ -152,16 +152,13 @@ static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
 
     if (extra_args > 0) {
       for (; extra_args > 0; --extra_args) {
-        Value b = vm_stack_peek(vm, 0);
-        Value a = vm_stack_peek(vm, 1);
-
-        int car = vm->w->cells.count;
-        value_array_write(&vm->w->cells, a);
-        value_array_write(&vm->w->cells, b);
+        Value cdr = vm_stack_peek(vm, 0);
+        Value car = vm_stack_peek(vm, 1);
+        struct obj_pair *pair = pair_new(car, cdr);
 
         vm_stack_pop(vm);
         vm_stack_pop(vm);
-        vm_stack_push(vm, CONS_VAL(car));
+        vm_stack_push(vm, OBJ_VAL(pair));
       }
     }
   } else if (arg_count != closure->lambda->arity) {
@@ -243,23 +240,22 @@ static bool vm_run(struct vm *vm)
       break;
     }
     case OP_DOT_CALL: {
-      if (!IS_CONS(vm_stack_peek(vm, 0))) {
+      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
         runtime_error(vm, "A lambda must be applied to a cons pair");
         return false;
       }
 
       uint8_t arg_count = READ_BYTE();
-      Value cons = vm_stack_pop(vm);
+      Value cdr = vm_stack_pop(vm);
 
       do {
-        Value car = vm->w->cells.values[AS_CAR(cons)];
-        Value cdr = vm->w->cells.values[AS_CDR(cons)];
-        vm_stack_push(vm, car);
+        struct obj_pair *pair = AS_PAIR(cdr);
+        cdr = pair->cdr;
+        vm_stack_push(vm, pair->car);
         arg_count++;
-        cons = cdr;
-      } while (IS_CONS(cons));
+      } while (IS_PAIR(cdr));
 
-      if (!IS_NIL(cons)) {
+      if (!IS_NIL(cdr)) {
         runtime_error(vm, "Attempt to apply a lambda to a non-list pair");
         return false;
       }
@@ -300,33 +296,30 @@ static bool vm_run(struct vm *vm)
       break;
     }
     case OP_CONS: {
-      Value b = vm_stack_peek(vm, 0);
-      Value a = vm_stack_peek(vm, 1);
-
-      int car = vm->w->cells.count;
-      value_array_write(&vm->w->cells, a);
-      value_array_write(&vm->w->cells, b);
+      Value cdr = vm_stack_peek(vm, 0);
+      Value car = vm_stack_peek(vm, 1);
+      struct obj_pair *pair = pair_new(car, cdr);
 
       vm_stack_pop(vm);
       vm_stack_pop(vm);
-      vm_stack_push(vm, CONS_VAL(car));
+      vm_stack_push(vm, OBJ_VAL(pair));
       break;
     }
     case OP_CAR:
-      if (!IS_CONS(vm_stack_peek(vm, 0))) {
+      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
         runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
 
-      vm_stack_push(vm, vm->w->cells.values[AS_CAR(vm_stack_pop(vm))]);
+      vm_stack_push(vm, AS_PAIR(vm_stack_pop(vm))->car);
       break;
     case OP_CDR:
-      if (!IS_CONS(vm_stack_peek(vm, 0))) {
+      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
         runtime_error(vm, "Operand must be a cons pair");
         return false;
       }
 
-      vm_stack_push(vm, vm->w->cells.values[AS_CDR(vm_stack_pop(vm))]);
+      vm_stack_push(vm, AS_PAIR(vm_stack_pop(vm))->cdr);
       break;
     case OP_DEFINE_GLOBAL: {
       struct obj_string *name = READ_ATOM();

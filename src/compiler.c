@@ -541,7 +541,7 @@ static void list(struct compiler *c)
     else
       emit_byte(c, OP_NIL);
 
-    for (int i = 0; i < elements - 1; ++i)
+    for (int i = 0; i < elements; ++i)
       emit_byte(c, OP_CONS);
   }
 

@@ -344,9 +344,8 @@ static void test_interning_unique(void)
     if (pool.ht[i] == NULL)
       continue;
 
-    // TODO: Replace with obj_free once written.
-    FREE(pool.ht[i]->chars);
-    FREE(pool.ht[i]);
+    free(pool.ht[i]->chars);
+    free(pool.ht[i]);
   }
 
   str_pool_free(&pool);
@@ -463,9 +462,8 @@ static void test_interning_non_unique(void)
     if (pool.ht[i] == NULL)
       continue;
 
-    // TODO: Replace with obj_free once written.
-    FREE(pool.ht[i]->chars);
-    FREE(pool.ht[i]);
+    free(pool.ht[i]->chars);
+    free(pool.ht[i]);
   }
   str_pool_free(&pool);
 }
@@ -504,9 +502,8 @@ static void test_interning_identity()
     if (pool.ht[i] == NULL)
       continue;
 
-    // TODO: Replace with obj_free once written.
-    FREE(pool.ht[i]->chars);
-    FREE(pool.ht[i]);
+    free(pool.ht[i]->chars);
+    free(pool.ht[i]);
   }
   str_pool_free(&pool);
 }

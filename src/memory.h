@@ -14,6 +14,8 @@
 
 #define FREE(ptr) wisp_realloc(ptr, 0)
 
+#define FREE_ARRAY(type, ptr) wisp_realloc(ptr, 0)
+
 void *wisp_realloc(void *, size_t);
 
 void *wisp_calloc(size_t, size_t);

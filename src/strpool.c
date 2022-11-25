@@ -50,7 +50,7 @@ static void adjust_capacity(struct str_pool *pool)
     }
   }
 
-  FREE(pool->ht);
+  FREE_ARRAY(struct obj_string *, pool->ht);
   pool->exp = new_exp;
   pool->ht = new_ht;
 }
@@ -89,6 +89,6 @@ struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
 
 void str_pool_free(struct str_pool *pool)
 {
-  FREE(pool->ht);
+  FREE_ARRAY(struct obj_string *, pool->ht);
   str_pool_init(pool, pool->str_type);
 }

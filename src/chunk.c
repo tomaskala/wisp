@@ -31,7 +31,7 @@ int chunk_add_constant(struct chunk *chunk, Value constant)
 
 void chunk_free(struct chunk *chunk)
 {
-  FREE(chunk->code);
-  FREE(chunk->lines);
+  FREE_ARRAY(uint8_t, chunk->code);
+  FREE_ARRAY(int, chunk->lines);
   chunk_init(chunk);
 }

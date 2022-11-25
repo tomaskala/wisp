@@ -39,6 +39,6 @@ void value_array_write(struct value_array *array, Value val)
 
 void value_array_free(struct value_array *array)
 {
-  FREE(array->values);
+  FREE_ARRAY(Value, array->values);
   value_array_init(array);
 }

@@ -57,7 +57,7 @@ static void adjust_capacity(struct table *table, int capacity)
     table->count++;
   }
 
-  FREE_ARRAY(struct table_node, table->ht);
+  FREE_ARRAY(struct table_node, table->ht, table->capacity);
   table->ht = ht;
   table->capacity = capacity;
 }
@@ -112,6 +112,6 @@ bool table_delete(struct table *table, struct obj_string *key)
 
 void table_free(struct table *table)
 {
-  FREE_ARRAY(struct table_node, table->ht);
+  FREE_ARRAY(struct table_node, table->ht, table->capacity);
   table_init(table);
 }

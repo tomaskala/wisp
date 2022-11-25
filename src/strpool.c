@@ -28,9 +28,10 @@ static uint64_t hash_string(const char *str, size_t len)
 
 static void adjust_capacity(struct str_pool *pool)
 {
+  size_t old_capacity = (size_t) (pool->ht == NULL ? 0 : CAPACITY(pool->exp));
   int new_exp = GROW_EXP_CAPACITY(pool->exp);
-  struct obj_string **new_ht = wisp_calloc((size_t) CAPACITY(new_exp),
-      sizeof(struct obj_string *));
+  struct obj_string **new_ht = wisp_calloc(old_capacity,
+      (size_t) CAPACITY(new_exp), sizeof(struct obj_string *));
 
   if (pool->ht != NULL) {
     for (int p = 0; p < CAPACITY(pool->exp); ++p) {
@@ -50,7 +51,7 @@ static void adjust_capacity(struct str_pool *pool)
     }
   }
 
-  FREE_ARRAY(struct obj_string *, pool->ht);
+  FREE_ARRAY(struct obj_string *, pool->ht, old_capacity);
   pool->exp = new_exp;
   pool->ht = new_ht;
 }
@@ -89,6 +90,7 @@ struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
 
 void str_pool_free(struct str_pool *pool)
 {
-  FREE_ARRAY(struct obj_string *, pool->ht);
+  size_t old_capacity = (size_t) (pool->ht == NULL ? 0 : CAPACITY(pool->exp));
+  FREE_ARRAY(struct obj_string *, pool->ht, old_capacity);
   str_pool_init(pool, pool->str_type);
 }

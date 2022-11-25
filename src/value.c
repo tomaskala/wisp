@@ -34,8 +34,10 @@ void value_array_init(struct value_array *array)
 void value_array_write(struct value_array *array, Value val)
 {
   if (array->count >= array->capacity) {
-    array->capacity = GROW_CAPACITY(array->capacity);
-    array->values = GROW_ARRAY(Value, array->values, array->capacity);
+    int old_capacity = array->capacity;
+    array->capacity = GROW_CAPACITY(old_capacity);
+    array->values = GROW_ARRAY(Value, array->values, old_capacity,
+        array->capacity);
   }
 
   array->values[array->count] = val;
@@ -44,7 +46,7 @@ void value_array_write(struct value_array *array, Value val)
 
 void value_array_free(struct value_array *array)
 {
-  FREE_ARRAY(Value, array->values);
+  FREE_ARRAY(Value, array->values, array->capacity);
   value_array_init(array);
 }
 
@@ -63,9 +65,12 @@ void chunk_init(struct chunk *chunk)
 void chunk_write(struct chunk *chunk, uint8_t codepoint, int line)
 {
   if (chunk->count >= chunk->capacity) {
-    chunk->capacity = GROW_CAPACITY(chunk->capacity);
-    chunk->code = GROW_ARRAY(uint8_t, chunk->code, chunk->capacity);
-    chunk->lines = GROW_ARRAY(int, chunk->lines, chunk->capacity);
+    int old_capacity = chunk->capacity;
+    chunk->capacity = GROW_CAPACITY(old_capacity);
+    chunk->code = GROW_ARRAY(uint8_t, chunk->code, old_capacity,
+        chunk->capacity);
+    chunk->lines = GROW_ARRAY(int, chunk->lines, old_capacity,
+        chunk->capacity);
   }
 
   chunk->code[chunk->count] = codepoint;
@@ -81,8 +86,8 @@ int chunk_add_constant(struct chunk *chunk, Value constant)
 
 void chunk_free(struct chunk *chunk)
 {
-  FREE_ARRAY(uint8_t, chunk->code);
-  FREE_ARRAY(int, chunk->lines);
+  FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
+  FREE_ARRAY(int, chunk->lines, chunk->capacity);
   chunk_init(chunk);
 }
 
@@ -94,7 +99,7 @@ void chunk_free(struct chunk *chunk)
 
 static struct obj *allocate_obj(size_t size, enum obj_type type)
 {
-  struct obj *obj = wisp_realloc(NULL, size);
+  struct obj *obj = wisp_realloc(NULL, 0, size);
   obj->type = type;
   return obj;
 }

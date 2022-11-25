@@ -2,10 +2,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "chunk.h"
 #include "compiler.h"
+#include "opcodes.h"
 #include "scanner.h"
-#include "value.h"
 
 struct parser {
   // Fetches tokens from the parsed string.

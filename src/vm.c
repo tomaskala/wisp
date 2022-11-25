@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 
+#include "opcodes.h"
 #include "table.h"
 #include "vm.h"
 

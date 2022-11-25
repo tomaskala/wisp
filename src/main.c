@@ -2,9 +2,9 @@
 #include <stdlib.h>
 
 #include "compiler.h"
-#include "object.h"
 #include "scanner.h"
 #include "state.h"
+#include "value.h"
 #include "vm.h"
 
 #define EXIT_USAGE_ERROR 64

@@ -1,8 +1,7 @@
 #include <stdio.h>
 
 #include "debug.h"
-#include "object.h"
-#include "value.h"
+#include "opcodes.h"
 
 static int constant_instruction(const char *name, struct chunk *chunk,
     int offset)

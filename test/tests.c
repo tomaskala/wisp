@@ -3,10 +3,10 @@
 #include <string.h>
 
 #include "../src/common.h"
-#include "../src/scanner.h"
 #include "../src/memory.h"
-#include "../src/object.h"
+#include "../src/scanner.h"
 #include "../src/strpool.h"
+#include "../src/value.h"
 
 static int count_fail = 0;
 static int count_pass = 0;

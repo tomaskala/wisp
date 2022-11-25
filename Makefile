@@ -7,11 +7,9 @@ LDLIBS  =
 
 SRCS = \
 	src/scanner.c \
-	src/chunk.c \
 	src/memory.c \
 	src/compiler.c \
 	src/value.c \
-	src/object.c \
 	src/strpool.c \
 	src/state.c \
 	src/vm.c \

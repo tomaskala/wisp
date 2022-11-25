@@ -1,5 +1,5 @@
-#include "object.h"
 #include "state.h"
+#include "value.h"
 
 void wisp_state_init(struct wisp_state *w)
 {

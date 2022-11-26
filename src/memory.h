@@ -8,7 +8,7 @@
 #define ALLOCATE(w, type, count) \
   wisp_realloc(w, NULL, 0, sizeof(type) * (count))
 
-#define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity) * 2)
+#define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity) << 1)
 
 #define GROW_EXP_CAPACITY(exp) ((exp) < 3 ? 3 : (exp) + 1)
 

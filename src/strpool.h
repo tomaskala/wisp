@@ -4,26 +4,12 @@
 // Source: https://nullprogram.com/blog/2022/08/08/
 
 #include "common.h"
-#include "value.h"
+#include "state.h"
 
-struct str_pool {
-  // Exact type of strings being interned.
-  enum obj_type str_type;
+void str_pool_init(struct wisp_state *);
 
-  // log2(capacity)
-  int exp;
+struct obj_string *str_pool_intern(struct wisp_state *, const char *, size_t);
 
-  // Number of elements present in the hash table.
-  int count;
-
-  // Array representation of the hash table.
-  struct obj_string **ht;
-};
-
-void str_pool_init(struct str_pool *, enum obj_type);
-
-struct obj_string *str_pool_intern(struct str_pool *, const char *, size_t);
-
-void str_pool_free(struct str_pool *);
+void str_pool_free(struct wisp_state *);
 
 #endif

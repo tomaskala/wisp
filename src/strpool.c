@@ -2,6 +2,7 @@
 
 #include "memory.h"
 #include "strpool.h"
+#include "value.h"
 
 #define CAPACITY(exp) (1 << (exp))
 
@@ -56,9 +57,10 @@ static void adjust_capacity(struct str_pool *pool)
   pool->ht = new_ht;
 }
 
-void str_pool_init(struct str_pool *pool, enum obj_type str_type)
+void str_pool_init(struct wisp_state *w)
 {
-  pool->str_type = str_type;
+  struct str_pool *pool = &w->str_pool;
+
   // Together with resizing at 50% load, initializing exp to 1
   // ensures that the array gets allocated upon first interning.
   pool->exp = 1;
@@ -66,9 +68,11 @@ void str_pool_init(struct str_pool *pool, enum obj_type str_type)
   pool->ht = NULL;
 }
 
-struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
+struct obj_string *str_pool_intern(struct wisp_state *w, const char *str,
     size_t len)
 {
+  struct str_pool *pool = &w->str_pool;
+
   if (pool->count + 1 == CAPACITY(pool->exp - 1))
     // Resize at 50% load.
     adjust_capacity(pool);
@@ -80,7 +84,8 @@ struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
 
     if (pool->ht[i] == NULL) {
       pool->count++;
-      pool->ht[i] = string_copy(pool->str_type, str, len, hash);
+      // TODO: Once strings are implemented, change the object type.
+      pool->ht[i] = string_copy(OBJ_ATOM, str, len, hash);
       return pool->ht[i];
     } else if (pool->ht[i]->len == len
         && memcmp(pool->ht[i]->chars, str, len) == 0)
@@ -88,9 +93,10 @@ struct obj_string *str_pool_intern(struct str_pool *pool, const char *str,
   }
 }
 
-void str_pool_free(struct str_pool *pool)
+void str_pool_free(struct wisp_state *w)
 {
+  struct str_pool *pool = &w->str_pool;
   size_t old_capacity = (size_t) (pool->ht == NULL ? 0 : CAPACITY(pool->exp));
   FREE_ARRAY(struct obj_string *, pool->ht, old_capacity);
-  str_pool_init(pool, pool->str_type);
+  str_pool_init(w);
 }

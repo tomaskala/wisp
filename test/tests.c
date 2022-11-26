@@ -5,6 +5,7 @@
 #include "../src/common.h"
 #include "../src/memory.h"
 #include "../src/scanner.h"
+#include "../src/state.h"
 #include "../src/strpool.h"
 #include "../src/value.h"
 
@@ -317,38 +318,38 @@ static void test_interning_unique(void)
     NULL,
   };
 
-  struct str_pool pool;
-  str_pool_init(&pool, OBJ_ATOM);
+  struct wisp_state w;
+  wisp_state_init(&w);
 
   for (int i = 0; strings[i] != NULL; ++i) {
-    struct obj_string *interned = str_pool_intern(&pool, strings[i],
+    struct obj_string *interned = str_pool_intern(&w, strings[i],
         strlen(strings[i]));
     const char *c_interned = interned->chars;
 
     int non_null_positions = 0;
-    for (int j = 0; j < 1 << pool.exp; ++j)
-      if (pool.ht[j] != NULL)
+    for (int j = 0; j < 1 << w.str_pool.exp; ++j)
+      if (w.str_pool.ht[j] != NULL)
         non_null_positions++;
 
     TEST(strlen(strings[i]) == interned->len
         && interned->len == strlen(c_interned)
         && memcmp(strings[i], c_interned, strlen(strings[i])) == 0,
         "unique interning %d, equality", i + 1);
-    TEST(pool.count == i + 1, "unique interning %d, pool size %d",
-        i + 1, pool.count);
-    TEST(pool.count == non_null_positions, "unique interning %d, non nulls %d",
-        i + 1, non_null_positions);
+    TEST(w.str_pool.count == i + 1, "unique interning %d, pool size %d",
+        i + 1, w.str_pool.count);
+    TEST(w.str_pool.count == non_null_positions,
+        "unique interning %d, non nulls %d", i + 1, non_null_positions);
   }
 
-  for (int i = 0; i < 1 << pool.exp; ++i) {
-    if (pool.ht[i] == NULL)
+  for (int i = 0; i < 1 << w.str_pool.exp; ++i) {
+    if (w.str_pool.ht[i] == NULL)
       continue;
 
-    free(pool.ht[i]->chars);
-    free(pool.ht[i]);
+    free(w.str_pool.ht[i]->chars);
+    free(w.str_pool.ht[i]);
   }
 
-  str_pool_free(&pool);
+  wisp_state_free(&w);
 }
 
 static void test_interning_non_unique(void)
@@ -425,17 +426,17 @@ static void test_interning_non_unique(void)
   };
 
   int prev_pool_count = 0;
-  struct str_pool pool;
-  str_pool_init(&pool, OBJ_ATOM);
+  struct wisp_state w;
+  wisp_state_init(&w);
 
   for (int i = 0; strings[i] != NULL; ++i) {
-    struct obj_string *interned = str_pool_intern(&pool, strings[i],
+    struct obj_string *interned = str_pool_intern(&w, strings[i],
         strlen(strings[i]));
     const char *c_interned = interned->chars;
 
     int non_null_positions = 0;
-    for (int j = 0; j < 1 << pool.exp; ++j)
-      if (pool.ht[j] != NULL)
+    for (int j = 0; j < 1 << w.str_pool.exp; ++j)
+      if (w.str_pool.ht[j] != NULL)
         non_null_positions++;
 
     TEST(strlen(strings[i]) == interned->len
@@ -444,28 +445,28 @@ static void test_interning_non_unique(void)
         "non-unique interning %d, equality", i + 1);
 
     if (is_unique[i])
-      TEST(pool.count == prev_pool_count + 1,
+      TEST(w.str_pool.count == prev_pool_count + 1,
           "non-unique interning %d, pool size is %d, should be %d (unique string)",
-          i + 1, pool.count, prev_pool_count + 1);
+          i + 1, w.str_pool.count, prev_pool_count + 1);
     else
-      TEST(pool.count == prev_pool_count,
+      TEST(w.str_pool.count == prev_pool_count,
           "non-unique interning %d, pool size is %d, should be %d (non-unique string)",
-          i + 1, pool.count, prev_pool_count);
+          i + 1, w.str_pool.count, prev_pool_count);
 
-    TEST(pool.count == non_null_positions, "unique interning %d, non nulls %d",
+    TEST(w.str_pool.count == non_null_positions, "unique interning %d, non nulls %d",
         i + 1, non_null_positions);
 
-    prev_pool_count = pool.count;
+    prev_pool_count = w.str_pool.count;
   }
 
-  for (int i = 0; i < 1 << pool.exp; ++i) {
-    if (pool.ht[i] == NULL)
+  for (int i = 0; i < 1 << w.str_pool.exp; ++i) {
+    if (w.str_pool.ht[i] == NULL)
       continue;
 
-    free(pool.ht[i]->chars);
-    free(pool.ht[i]);
+    free(w.str_pool.ht[i]->chars);
+    free(w.str_pool.ht[i]);
   }
-  str_pool_free(&pool);
+  wisp_state_free(&w);
 }
 
 static void test_interning_identity()
@@ -484,13 +485,13 @@ static void test_interning_identity()
     NULL,
   };
 
-  struct str_pool pool;
-  str_pool_init(&pool, OBJ_ATOM);
+  struct wisp_state w;
+  wisp_state_init(&w);
 
   for (int i = 0; strings[i] != NULL; ++i) {
-    struct obj_string *fst = str_pool_intern(&pool, strings[i],
+    struct obj_string *fst = str_pool_intern(&w, strings[i],
         strlen(strings[i]));
-    struct obj_string *snd = str_pool_intern(&pool, strings[i],
+    struct obj_string *snd = str_pool_intern(&w, strings[i],
         strlen(strings[i]));
 
     TEST(fst->len == snd->len && memcmp(fst->chars, snd->chars, fst->len) == 0,
@@ -498,14 +499,14 @@ static void test_interning_identity()
     TEST(fst == snd, "Interning comparison by identity %d", i + 1);
   }
 
-  for (int i = 0; i < 1 << pool.exp; ++i) {
-    if (pool.ht[i] == NULL)
+  for (int i = 0; i < 1 << w.str_pool.exp; ++i) {
+    if (w.str_pool.ht[i] == NULL)
       continue;
 
-    free(pool.ht[i]->chars);
-    free(pool.ht[i]);
+    free(w.str_pool.ht[i]->chars);
+    free(w.str_pool.ht[i]);
   }
-  str_pool_free(&pool);
+  wisp_state_free(&w);
 }
 
 int main(void)

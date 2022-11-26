@@ -112,7 +112,7 @@ static struct obj_upvalue *capture_upvalue(struct vm *vm, Value *local)
   if (upvalue != NULL && upvalue->location == local)
     return upvalue;
 
-  struct obj_upvalue *captured = upvalue_new(local);
+  struct obj_upvalue *captured = upvalue_new(vm->w, local);
   captured->next = upvalue;
 
   if (prev == NULL)
@@ -155,7 +155,7 @@ static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
       for (; extra_args > 0; --extra_args) {
         Value cdr = vm_stack_peek(vm, 0);
         Value car = vm_stack_peek(vm, 1);
-        struct obj_pair *pair = pair_new(car, cdr);
+        struct obj_pair *pair = pair_new(vm->w, car, cdr);
 
         vm_stack_pop(vm);
         vm_stack_pop(vm);
@@ -269,7 +269,7 @@ static bool vm_run(struct vm *vm)
     }
     case OP_CLOSURE: {
       struct obj_lambda *lambda = AS_LAMBDA(READ_CONSTANT());
-      struct obj_closure *closure = closure_new(lambda);
+      struct obj_closure *closure = closure_new(vm->w, lambda);
       vm_stack_push(vm, OBJ_VAL(closure));
 
       for (int i = 0; i < closure->upvalue_count; ++i) {
@@ -299,7 +299,7 @@ static bool vm_run(struct vm *vm)
     case OP_CONS: {
       Value cdr = vm_stack_peek(vm, 0);
       Value car = vm_stack_peek(vm, 1);
-      struct obj_pair *pair = pair_new(car, cdr);
+      struct obj_pair *pair = pair_new(vm->w, car, cdr);
 
       vm_stack_pop(vm);
       vm_stack_pop(vm);
@@ -324,7 +324,7 @@ static bool vm_run(struct vm *vm)
       break;
     case OP_DEFINE_GLOBAL: {
       struct obj_string *name = READ_ATOM();
-      table_set(&vm->w->globals, name, vm_stack_peek(vm, 0));
+      table_set(vm->w, &vm->w->globals, name, vm_stack_peek(vm, 0));
       vm_stack_pop(vm);
       break;
     }
@@ -364,7 +364,7 @@ bool interpret(struct wisp_state *w, struct obj_lambda *lambda)
   vm_init(&vm, w);
 
   vm_stack_push(&vm, OBJ_VAL(lambda));
-  struct obj_closure *closure = closure_new(lambda);
+  struct obj_closure *closure = closure_new(vm.w, lambda);
   vm_stack_pop(&vm);
   vm_stack_push(&vm, OBJ_VAL(closure));
 

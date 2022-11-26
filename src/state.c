@@ -1,5 +1,6 @@
 #include "state.h"
 #include "strpool.h"
+#include "table.h"
 #include "value.h"
 
 void wisp_state_init(struct wisp_state *w)
@@ -10,7 +11,7 @@ void wisp_state_init(struct wisp_state *w)
 
 void wisp_state_free(struct wisp_state *w)
 {
-  table_free(&w->globals);
+  table_free(w, &w->globals);
   str_pool_free(w);
   wisp_state_init(w);
 }

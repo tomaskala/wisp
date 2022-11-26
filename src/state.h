@@ -1,8 +1,6 @@
 #ifndef WISP_STATE_H
 #define WISP_STATE_H
 
-#include "table.h"
-
 struct str_pool {
   // log2(capacity)
   int exp;
@@ -12,6 +10,13 @@ struct str_pool {
 
   // Array representation of the hash table.
   struct obj_string **ht;
+};
+
+// TODO: Unify the logic with string pool?
+struct table {
+  int capacity;
+  int count;
+  struct table_node *ht;
 };
 
 struct wisp_state {

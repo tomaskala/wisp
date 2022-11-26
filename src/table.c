@@ -34,9 +34,10 @@ static struct table_node *find_entry(struct table_node *ht, int capacity,
   }
 }
 
-static void adjust_capacity(struct table *table, int capacity)
+static void adjust_capacity(struct wisp_state *w, struct table *table,
+    int capacity)
 {
-  struct table_node *ht = ALLOCATE(struct table_node, capacity);
+  struct table_node *ht = ALLOCATE(w, struct table_node, capacity);
 
   for (int i = 0; i < capacity; ++i) {
     ht[i].key = NULL;
@@ -57,7 +58,7 @@ static void adjust_capacity(struct table *table, int capacity)
     table->count++;
   }
 
-  FREE_ARRAY(struct table_node, table->ht, table->capacity);
+  FREE_ARRAY(w, struct table_node, table->ht, table->capacity);
   table->ht = ht;
   table->capacity = capacity;
 }
@@ -76,11 +77,12 @@ bool table_get(struct table *table, struct obj_string *key, Value *val)
   return true;
 }
 
-bool table_set(struct table *table, struct obj_string *key, Value val)
+bool table_set(struct wisp_state *w, struct table *table,
+    struct obj_string *key, Value val)
 {
   if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
     int capacity = GROW_CAPACITY(table->capacity);
-    adjust_capacity(table, capacity);
+    adjust_capacity(w, table, capacity);
   }
 
   struct table_node *node = find_entry(table->ht, table->capacity, key);
@@ -110,8 +112,8 @@ bool table_delete(struct table *table, struct obj_string *key)
   return true;
 }
 
-void table_free(struct table *table)
+void table_free(struct wisp_state *w, struct table *table)
 {
-  FREE_ARRAY(struct table_node, table->ht, table->capacity);
+  FREE_ARRAY(w, struct table_node, table->ht, table->capacity);
   table_init(table);
 }

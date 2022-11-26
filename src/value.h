@@ -2,6 +2,7 @@
 #define WISP_VALUE_H
 
 #include "common.h"
+#include "state.h"
 
 // Primitive values.
 // ============================================================================
@@ -41,9 +42,9 @@ struct value_array {
 
 void value_array_init(struct value_array *);
 
-void value_array_write(struct value_array *, Value);
+void value_array_write(struct wisp_state *, struct value_array *, Value);
 
-void value_array_free(struct value_array *);
+void value_array_free(struct wisp_state *, struct value_array *);
 
 // Chunk type.
 // ============================================================================
@@ -58,11 +59,11 @@ struct chunk {
 
 void chunk_init(struct chunk *);
 
-void chunk_write(struct chunk *, uint8_t, int);
+void chunk_write(struct wisp_state *, struct chunk *, uint8_t, int);
 
-int chunk_add_constant(struct chunk *, Value);
+int chunk_add_constant(struct wisp_state *, struct chunk *, Value);
 
-void chunk_free(struct chunk *);
+void chunk_free(struct wisp_state *, struct chunk *);
 
 // Heap-allocated objects.
 // ============================================================================
@@ -172,14 +173,15 @@ struct obj_pair {
   Value cdr;
 };
 
-struct obj_string *string_copy(enum obj_type, const char *, size_t, uint64_t);
+struct obj_string *string_copy(struct wisp_state *, enum obj_type,
+    const char *, size_t, uint64_t);
 
-struct obj_closure *closure_new(struct obj_lambda *);
+struct obj_closure *closure_new(struct wisp_state *, struct obj_lambda *);
 
-struct obj_lambda *lambda_new();
+struct obj_lambda *lambda_new(struct wisp_state *);
 
-struct obj_upvalue *upvalue_new(Value *);
+struct obj_upvalue *upvalue_new(struct wisp_state *, Value *);
 
-struct obj_pair *pair_new(Value, Value);
+struct obj_pair *pair_new(struct wisp_state *, Value, Value);
 
 #endif

@@ -99,7 +99,7 @@ static void compiler_init(struct compiler *c, struct wisp_state *w,
   c->type = type;
   c->local_count = 0;
   c->scope_depth = 0;
-  c->lambda = lambda_new();
+  c->lambda = lambda_new(c->w);
 }
 
 static void error_at(struct parser *p, struct token tok, const char *msg)
@@ -169,7 +169,7 @@ static bool match(struct parser *p, enum token_type type)
 
 static void emit_byte(struct compiler *c, uint8_t byte)
 {
-  chunk_write(&c->lambda->chunk, byte, c->parser->prev.line);
+  chunk_write(c->w, &c->lambda->chunk, byte, c->parser->prev.line);
 }
 
 static void emit_bytes(struct compiler *c, uint8_t byte1, uint8_t byte2)
@@ -180,7 +180,7 @@ static void emit_bytes(struct compiler *c, uint8_t byte1, uint8_t byte2)
 
 static uint8_t make_constant(struct compiler *c, Value v)
 {
-  int constant = chunk_add_constant(&c->lambda->chunk, v);
+  int constant = chunk_add_constant(c->w, &c->lambda->chunk, v);
 
   if (constant > UINT8_MAX) {
     error(c->parser, "Too many constants in one chunk");

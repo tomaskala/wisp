@@ -31,12 +31,13 @@ void value_array_init(struct value_array *array)
   array->values = NULL;
 }
 
-void value_array_write(struct value_array *array, Value val)
+void value_array_write(struct wisp_state *w, struct value_array *array,
+    Value val)
 {
   if (array->count >= array->capacity) {
     int old_capacity = array->capacity;
     array->capacity = GROW_CAPACITY(old_capacity);
-    array->values = GROW_ARRAY(Value, array->values, old_capacity,
+    array->values = GROW_ARRAY(w, Value, array->values, old_capacity,
         array->capacity);
   }
 
@@ -44,9 +45,9 @@ void value_array_write(struct value_array *array, Value val)
   array->count++;
 }
 
-void value_array_free(struct value_array *array)
+void value_array_free(struct wisp_state *w, struct value_array *array)
 {
-  FREE_ARRAY(Value, array->values, array->capacity);
+  FREE_ARRAY(w, Value, array->values, array->capacity);
   value_array_init(array);
 }
 
@@ -62,14 +63,15 @@ void chunk_init(struct chunk *chunk)
   value_array_init(&chunk->constants);
 }
 
-void chunk_write(struct chunk *chunk, uint8_t codepoint, int line)
+void chunk_write(struct wisp_state *w, struct chunk *chunk, uint8_t codepoint,
+    int line)
 {
   if (chunk->count >= chunk->capacity) {
     int old_capacity = chunk->capacity;
     chunk->capacity = GROW_CAPACITY(old_capacity);
-    chunk->code = GROW_ARRAY(uint8_t, chunk->code, old_capacity,
+    chunk->code = GROW_ARRAY(w, uint8_t, chunk->code, old_capacity,
         chunk->capacity);
-    chunk->lines = GROW_ARRAY(int, chunk->lines, old_capacity,
+    chunk->lines = GROW_ARRAY(w, int, chunk->lines, old_capacity,
         chunk->capacity);
   }
 
@@ -78,69 +80,73 @@ void chunk_write(struct chunk *chunk, uint8_t codepoint, int line)
   chunk->count++;
 }
 
-int chunk_add_constant(struct chunk *chunk, Value constant)
+int chunk_add_constant(struct wisp_state *w, struct chunk *chunk,
+    Value constant)
 {
-  value_array_write(&chunk->constants, constant);
+  value_array_write(w, &chunk->constants, constant);
   return chunk->constants.count - 1;
 }
 
-void chunk_free(struct chunk *chunk)
+void chunk_free(struct wisp_state *w, struct chunk *chunk)
 {
-  FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
-  FREE_ARRAY(int, chunk->lines, chunk->capacity);
+  FREE_ARRAY(w, uint8_t, chunk->code, chunk->capacity);
+  FREE_ARRAY(w, int, chunk->lines, chunk->capacity);
   chunk_init(chunk);
 }
 
 // Heap-allocated objects.
 // ============================================================================
 
-#define ALLOCATE_OBJ(type, obj_type) \
-  (type *) allocate_obj(sizeof(type), obj_type)
+#define ALLOCATE_OBJ(w, type, obj_type) \
+  (type *) allocate_obj(w, sizeof(type), obj_type)
 
-static struct obj *allocate_obj(size_t size, enum obj_type type)
+static struct obj *allocate_obj(struct wisp_state *w, size_t size,
+    enum obj_type type)
 {
-  struct obj *obj = wisp_realloc(NULL, 0, size);
+  struct obj *obj = wisp_realloc(w, NULL, 0, size);
   obj->type = type;
   return obj;
 }
 
-static struct obj_string *allocate_string(enum obj_type str_type, char *chars,
-    size_t len, uint64_t hash)
+static struct obj_string *allocate_string(struct wisp_state *w,
+    enum obj_type str_type, char *chars, size_t len, uint64_t hash)
 {
-  struct obj_string *str = ALLOCATE_OBJ(struct obj_string, str_type);
+  struct obj_string *str = ALLOCATE_OBJ(w, struct obj_string, str_type);
   str->chars = chars;
   str->len = len;
   str->hash = hash;
   return str;
 }
 
-struct obj_string *string_copy(enum obj_type str_type, const char *chars,
-    size_t len, uint64_t hash)
+struct obj_string *string_copy(struct wisp_state *w, enum obj_type str_type,
+    const char *chars, size_t len, uint64_t hash)
 {
-  char *heap_chars = ALLOCATE(char, len + 1);
+  char *heap_chars = ALLOCATE(w, char, len + 1);
   memcpy(heap_chars, chars, len);
   heap_chars[len] = '\0';
-  return allocate_string(str_type, heap_chars, len, hash);
+  return allocate_string(w, str_type, heap_chars, len, hash);
 }
 
-struct obj_closure *closure_new(struct obj_lambda *lambda)
+struct obj_closure *closure_new(struct wisp_state *w,
+    struct obj_lambda *lambda)
 {
-  struct obj_upvalue **upvalues = ALLOCATE(struct obj_upvalue *,
+  struct obj_upvalue **upvalues = ALLOCATE(w, struct obj_upvalue *,
       lambda->upvalue_count);
 
   for (int i = 0; i < lambda->upvalue_count; ++i)
     upvalues[i] = NULL;
 
-  struct obj_closure *closure = ALLOCATE_OBJ(struct obj_closure, OBJ_CLOSURE);
+  struct obj_closure *closure = ALLOCATE_OBJ(w, struct obj_closure,
+      OBJ_CLOSURE);
   closure->lambda = lambda;
   closure->upvalues = upvalues;
   closure->upvalue_count = lambda->upvalue_count;
   return closure;
 }
 
-struct obj_lambda *lambda_new()
+struct obj_lambda *lambda_new(struct wisp_state *w)
 {
-  struct obj_lambda *lambda = ALLOCATE_OBJ(struct obj_lambda, OBJ_LAMBDA);
+  struct obj_lambda *lambda = ALLOCATE_OBJ(w, struct obj_lambda, OBJ_LAMBDA);
   lambda->arity = 0;
   lambda->upvalue_count = 0;
   lambda->has_param_list = false;
@@ -148,18 +154,19 @@ struct obj_lambda *lambda_new()
   return lambda;
 }
 
-struct obj_upvalue *upvalue_new(Value *slot)
+struct obj_upvalue *upvalue_new(struct wisp_state *w, Value *slot)
 {
-  struct obj_upvalue *upvalue = ALLOCATE_OBJ(struct obj_upvalue, OBJ_UPVALUE);
+  struct obj_upvalue *upvalue = ALLOCATE_OBJ(w, struct obj_upvalue,
+      OBJ_UPVALUE);
   upvalue->location = slot;
   upvalue->closed = NIL_VAL;
   upvalue->next = NULL;
   return upvalue;
 }
 
-struct obj_pair *pair_new(Value car, Value cdr)
+struct obj_pair *pair_new(struct wisp_state *w, Value car, Value cdr)
 {
-  struct obj_pair *pair = ALLOCATE_OBJ(struct obj_pair, OBJ_PAIR);
+  struct obj_pair *pair = ALLOCATE_OBJ(w, struct obj_pair, OBJ_PAIR);
   pair->car = car;
   pair->cdr = cdr;
   return pair;

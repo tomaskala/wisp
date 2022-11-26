@@ -1,7 +1,9 @@
 #include "memory.h"
 
-void *wisp_realloc(void *ptr, size_t old_size, size_t new_size)
+void *wisp_realloc(struct wisp_state *w, void *ptr, size_t old_size,
+    size_t new_size)
 {
+  (void) w;  // TODO
   (void) old_size;  // TODO
 
   if (new_size == 0) {

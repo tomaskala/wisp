@@ -54,7 +54,7 @@ static void adjust_capacity(struct wisp_state *w)
     }
   }
 
-  FREE_ARRAY(struct obj_string *, pool->ht, old_capacity);
+  FREE_ARRAY(w, struct obj_string *, pool->ht, old_capacity);
   pool->exp = new_exp;
   pool->ht = new_ht;
 }
@@ -87,7 +87,7 @@ struct obj_string *str_pool_intern(struct wisp_state *w, const char *str,
     if (pool->ht[i] == NULL) {
       pool->count++;
       // TODO: Once strings are implemented, change the object type.
-      pool->ht[i] = string_copy(OBJ_ATOM, str, len, hash);
+      pool->ht[i] = string_copy(w, OBJ_ATOM, str, len, hash);
       return pool->ht[i];
     } else if (pool->ht[i]->len == len
         && memcmp(pool->ht[i]->chars, str, len) == 0)
@@ -99,6 +99,6 @@ void str_pool_free(struct wisp_state *w)
 {
   struct str_pool *pool = &w->str_pool;
   size_t old_capacity = (size_t) (pool->ht == NULL ? 0 : CAPACITY(pool->exp));
-  FREE_ARRAY(struct obj_string *, pool->ht, old_capacity);
+  FREE_ARRAY(w, struct obj_string *, pool->ht, old_capacity);
   str_pool_init(w);
 }

@@ -2,6 +2,7 @@
 #define WISP_VM_H
 
 #include "common.h"
+#include "memory.h"
 #include "state.h"
 #include "value.h"
 

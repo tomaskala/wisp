@@ -27,11 +27,13 @@ static uint64_t hash_string(const char *str, size_t len)
   return hash ^ hash >> 32;
 }
 
-static void adjust_capacity(struct str_pool *pool)
+static void adjust_capacity(struct wisp_state *w)
 {
+  struct str_pool *pool = &w->str_pool;
+
   size_t old_capacity = (size_t) (pool->ht == NULL ? 0 : CAPACITY(pool->exp));
   int new_exp = GROW_EXP_CAPACITY(pool->exp);
-  struct obj_string **new_ht = wisp_calloc(old_capacity,
+  struct obj_string **new_ht = wisp_calloc(w, old_capacity,
       (size_t) CAPACITY(new_exp), sizeof(struct obj_string *));
 
   if (pool->ht != NULL) {
@@ -75,7 +77,7 @@ struct obj_string *str_pool_intern(struct wisp_state *w, const char *str,
 
   if (pool->count + 1 == CAPACITY(pool->exp - 1))
     // Resize at 50% load.
-    adjust_capacity(pool);
+    adjust_capacity(w);
 
   uint64_t hash = hash_string(str, len);
 

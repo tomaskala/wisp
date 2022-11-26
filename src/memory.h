@@ -3,6 +3,8 @@
 
 #include <stdlib.h>
 
+#include "state.h"
+
 #define ALLOCATE(type, count) wisp_realloc(NULL, 0, sizeof(type) * (count))
 
 #define GROW_CAPACITY(capacity) ((capacity) < 8 ? 8 : (capacity) * 2)
@@ -19,6 +21,6 @@
 
 void *wisp_realloc(void *, size_t, size_t);
 
-void *wisp_calloc(size_t, size_t, size_t);
+void *wisp_calloc(struct wisp_state *, size_t, size_t, size_t);
 
 #endif

@@ -16,8 +16,10 @@ void *wisp_realloc(void *ptr, size_t old_size, size_t new_size)
   return result;
 }
 
-void *wisp_calloc(size_t old_nmemb, size_t new_nmemb, size_t size)
+void *wisp_calloc(struct wisp_state *w, size_t old_nmemb, size_t new_nmemb,
+    size_t size)
 {
+  (void) w;  // TODO
   (void) old_nmemb;  // TODO
 
   void *result = calloc(new_nmemb, size);

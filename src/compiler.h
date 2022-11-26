@@ -1,6 +1,7 @@
 #ifndef WISP_COMPILER_H
 #define WISP_COMPILER_H
 
+#include "memory.h"
 #include "state.h"
 #include "value.h"
 

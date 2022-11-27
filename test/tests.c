@@ -341,14 +341,6 @@ static void test_interning_unique(void)
         "unique interning %d, non nulls %d", i + 1, non_null_positions);
   }
 
-  for (int i = 0; i < 1 << w.str_pool.exp; ++i) {
-    if (w.str_pool.ht[i] == NULL)
-      continue;
-
-    free(w.str_pool.ht[i]->chars);
-    free(w.str_pool.ht[i]);
-  }
-
   wisp_state_free(&w);
 }
 
@@ -459,13 +451,6 @@ static void test_interning_non_unique(void)
     prev_pool_count = w.str_pool.count;
   }
 
-  for (int i = 0; i < 1 << w.str_pool.exp; ++i) {
-    if (w.str_pool.ht[i] == NULL)
-      continue;
-
-    free(w.str_pool.ht[i]->chars);
-    free(w.str_pool.ht[i]);
-  }
   wisp_state_free(&w);
 }
 
@@ -499,13 +484,6 @@ static void test_interning_identity()
     TEST(fst == snd, "Interning comparison by identity %d", i + 1);
   }
 
-  for (int i = 0; i < 1 << w.str_pool.exp; ++i) {
-    if (w.str_pool.ht[i] == NULL)
-      continue;
-
-    free(w.str_pool.ht[i]->chars);
-    free(w.str_pool.ht[i]);
-  }
   wisp_state_free(&w);
 }
 

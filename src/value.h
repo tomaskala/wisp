@@ -94,6 +94,7 @@ enum obj_type {
 
 struct obj {
   enum obj_type type;
+  struct obj *next;
 };
 
 static inline bool is_obj_type(Value value, enum obj_type type)

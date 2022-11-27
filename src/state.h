@@ -36,6 +36,9 @@ struct wisp_state {
   // List of upvalues pointing to local variables still on the stack.
   struct obj_upvalue *open_upvalues;
 
+  // List of all collectable objects.
+  struct obj *objects;
+
   // TODO: When strings are implemented, consider whether they should be
   // TODO: interned or not. If not, the implementation of strings, atoms and
   // TODO: the string pool could be greatly simplified.

@@ -24,4 +24,6 @@ void *wisp_realloc(struct wisp_state *, void *, size_t, size_t);
 
 void *wisp_calloc(struct wisp_state *, size_t, size_t, size_t);
 
+void wisp_free_objects(struct wisp_state *);
+
 #endif

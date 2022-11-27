@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "memory.h"
+#include "state.h"
 #include "value.h"
 
 // Primitive values.
@@ -105,6 +106,11 @@ static struct obj *allocate_obj(struct wisp_state *w, size_t size,
 {
   struct obj *obj = wisp_realloc(w, NULL, 0, size);
   obj->type = type;
+  obj->next = w->objects;
+  w->objects = obj;
+#ifdef DEBUG_LOG_GC
+  printf("%p allocate %zu for %d\n", (void *) obj, size, type);
+#endif
   return obj;
 }
 

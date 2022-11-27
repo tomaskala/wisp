@@ -92,6 +92,7 @@ void chunk_free(struct wisp_state *w, struct chunk *chunk)
 {
   FREE_ARRAY(w, uint8_t, chunk->code, chunk->capacity);
   FREE_ARRAY(w, int, chunk->lines, chunk->capacity);
+  value_array_free(w, &chunk->constants);
   chunk_init(chunk);
 }
 

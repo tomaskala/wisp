@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#include "state.h"
+#include "common.h"
 
 #define ALLOCATE(w, type, count) \
   wisp_realloc(w, NULL, 0, sizeof(type) * (count))

@@ -11,4 +11,6 @@
 #define XSTR(s) STR(s)
 #define STR(s) #s
 
+struct wisp_state;
+
 #endif

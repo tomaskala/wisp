@@ -1,6 +1,7 @@
 #include <string.h>
 
 #include "memory.h"
+#include "state.h"
 #include "strpool.h"
 #include "value.h"
 

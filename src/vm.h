@@ -3,7 +3,6 @@
 
 #include "common.h"
 #include "memory.h"
-#include "state.h"
 #include "value.h"
 
 bool interpret(struct wisp_state *, struct obj_lambda *);

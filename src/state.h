@@ -1,32 +1,51 @@
 #ifndef WISP_STATE_H
 #define WISP_STATE_H
 
-struct str_pool {
-  // log2(capacity)
-  int exp;
+#include "common.h"
+#include "strpool.h"
+#include "table.h"
+#include "value.h"
 
-  // Number of elements present in the hash table.
-  int count;
+#define FRAMES_MAX 64
+#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
 
-  // Array representation of the hash table.
-  struct obj_string **ht;
-};
+struct call_frame {
+  // Currently executed closure.
+  struct obj_closure *closure;
 
-// TODO: Unify the logic with string pool?
-struct table {
-  int capacity;
-  int count;
-  struct table_node *ht;
+  // The next instruction to be executed.
+  uint8_t *ip;
+
+  // The first slot in the VM value stack the closure can use.
+  Value *slots;
 };
 
 struct wisp_state {
+  // Contains all call nested call frames of the current closure execution.
+  struct call_frame frames[FRAMES_MAX];
+
+  // Number of currently nested call frames.
+  int frame_count;
+
+  // A value must reside on the stack to be marked as reachable.
+  Value stack[STACK_MAX];
+
+  // The next value to pop/peek;
+  Value *stack_top;
+
+  // List of upvalues pointing to local variables still on the stack.
+  struct obj_upvalue *open_upvalues;
+
   // TODO: When strings are implemented, consider whether they should be
   // TODO: interned or not. If not, the implementation of strings, atoms and
   // TODO: the string pool could be greatly simplified.
   // TODO: Advantages: compare strings by identity, in general memory savings
   // TODO: Disadvantages: GC overhead (weak refs), memory overhead if used once
+
+  // Hash table for strings.
   struct str_pool str_pool;
 
+  // A mapping of global variable names to their values.
   struct table globals;
 };
 

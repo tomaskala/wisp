@@ -2,7 +2,6 @@
 #define WISP_VALUE_H
 
 #include "common.h"
-#include "state.h"
 
 // Primitive values.
 // ============================================================================

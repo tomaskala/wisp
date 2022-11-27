@@ -2,6 +2,7 @@
 #include <stdio.h>
 
 #include "opcodes.h"
+#include "state.h"
 #include "table.h"
 #include "vm.h"
 
@@ -9,77 +10,31 @@
 #include "debug.h"
 #endif
 
-#define FRAMES_MAX 64
-#define STACK_MAX (FRAMES_MAX * UINT8_COUNT)
-
-struct call_frame {
-  // Currently executed closure.
-  struct obj_closure *closure;
-
-  // The next instruction to be executed.
-  uint8_t *ip;
-
-  // The first slot in the VM value stack the closure can use.
-  Value *slots;
-};
-
-struct vm {
-  // The overall state of the program.
-  struct wisp_state *w;
-
-  // Contains all call nested call frames of the current closure execution.
-  struct call_frame frames[FRAMES_MAX];
-
-  // Number of currently nested call frames.
-  int frame_count;
-
-  // A value must reside on the stack to be marked as reachable.
-  Value stack[STACK_MAX];
-
-  // The next value to pop/peek;
-  Value *stack_top;
-
-  // List of upvalues pointing to local variables still on the stack.
-  struct obj_upvalue *open_upvalues;
-};
-
-static void vm_stack_reset(struct vm *vm)
+static void vm_stack_reset(struct wisp_state *w)
 {
-  vm->frame_count = 0;
-  vm->stack_top = vm->stack;
-  vm->open_upvalues = NULL;
+  w->frame_count = 0;
+  w->stack_top = w->stack;
+  w->open_upvalues = NULL;
 }
 
-static void vm_init(struct vm *vm, struct wisp_state *w)
+static void vm_stack_push(struct wisp_state *w, Value value)
 {
-  vm->w = w;
-  vm_stack_reset(vm);
+  *w->stack_top = value;
+  w->stack_top++;
 }
 
-static void vm_stack_push(struct vm *vm, Value value)
+static Value vm_stack_pop(struct wisp_state *w)
 {
-  *vm->stack_top = value;
-  vm->stack_top++;
+  w->stack_top--;
+  return *w->stack_top;
 }
 
-static Value vm_stack_pop(struct vm *vm)
+static Value vm_stack_peek(struct wisp_state *w, int distance)
 {
-  vm->stack_top--;
-  return *vm->stack_top;
+  return w->stack_top[-1 - distance];
 }
 
-static Value vm_stack_peek(struct vm *vm, int distance)
-{
-  return vm->stack_top[-1 - distance];
-}
-
-static void vm_free(struct vm *vm)
-{
-  (void) vm;
-  // TODO
-}
-
-static void runtime_error(struct vm *vm, const char *format, ...)
+static void runtime_error(struct wisp_state *w, const char *format, ...)
 {
   va_list args;
   va_start(args, format);
@@ -87,8 +42,8 @@ static void runtime_error(struct vm *vm, const char *format, ...)
   va_end(args);
   fputs("\n", stderr);
 
-  for (int i = vm->frame_count - 1; i >= 0; --i) {
-    struct call_frame *frame = &vm->frames[i];
+  for (int i = w->frame_count - 1; i >= 0; --i) {
+    struct call_frame *frame = &w->frames[i];
     struct obj_lambda *lambda = frame->closure->lambda;
     size_t instruction = frame->ip - lambda->chunk.code - 1;
     fprintf(stderr, "[line %d]\n", lambda->chunk.lines[instruction]);
@@ -96,13 +51,13 @@ static void runtime_error(struct vm *vm, const char *format, ...)
     // TODO: if it has a name.
   }
 
-  vm_stack_reset(vm);
+  vm_stack_reset(w);
 }
 
-static struct obj_upvalue *capture_upvalue(struct vm *vm, Value *local)
+static struct obj_upvalue *capture_upvalue(struct wisp_state *w, Value *local)
 {
   struct obj_upvalue *prev = NULL;
-  struct obj_upvalue *upvalue = vm->open_upvalues;
+  struct obj_upvalue *upvalue = w->open_upvalues;
 
   while (upvalue != NULL && upvalue->location > local) {
     prev = upvalue;
@@ -112,34 +67,35 @@ static struct obj_upvalue *capture_upvalue(struct vm *vm, Value *local)
   if (upvalue != NULL && upvalue->location == local)
     return upvalue;
 
-  struct obj_upvalue *captured = upvalue_new(vm->w, local);
+  struct obj_upvalue *captured = upvalue_new(w, local);
   captured->next = upvalue;
 
   if (prev == NULL)
-    vm->open_upvalues = captured;
+    w->open_upvalues = captured;
   else
     prev->next = captured;
 
   return captured;
 }
 
-static void close_upvalues(struct vm *vm, Value *last)
+static void close_upvalues(struct wisp_state *w, Value *last)
 {
-  while (vm->open_upvalues != NULL && vm->open_upvalues->location >= last) {
-    struct obj_upvalue *upvalue = vm->open_upvalues;
+  while (w->open_upvalues != NULL && w->open_upvalues->location >= last) {
+    struct obj_upvalue *upvalue = w->open_upvalues;
     upvalue->closed = *upvalue->location;
     upvalue->location = &upvalue->closed;
-    vm->open_upvalues = upvalue->next;
+    w->open_upvalues = upvalue->next;
   }
 }
 
-static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
+static bool call(struct wisp_state *w, struct obj_closure *closure,
+    uint8_t arg_count)
 {
   if (closure->lambda->has_param_list) {
     // Either (lambda params expr) or (lambda (p1 p2 ... pn . params) expr)
     // Subtract 1 from the lambda's arity which includes the parameter list.
     if (arg_count < closure->lambda->arity - 1) {
-      runtime_error(vm,
+      runtime_error(w,
           "Expected at least %" PRIu8 " arguments but got %" PRIu8,
           closure->lambda->arity - 1, arg_count);
       return false;
@@ -148,60 +104,59 @@ static bool call(struct vm *vm, struct obj_closure *closure, uint8_t arg_count)
     // Need to collect all extra arguments in a list and push it as the last
     // argument. Even if no extra arguments have been provided, we need to push
     // an empty list.
-    vm_stack_push(vm, NIL_VAL);
+    vm_stack_push(w, NIL_VAL);
     uint8_t extra_args = arg_count - (closure->lambda->arity - 1);
 
     if (extra_args > 0) {
       for (; extra_args > 0; --extra_args) {
-        Value cdr = vm_stack_peek(vm, 0);
-        Value car = vm_stack_peek(vm, 1);
-        struct obj_pair *pair = pair_new(vm->w, car, cdr);
+        Value cdr = vm_stack_peek(w, 0);
+        Value car = vm_stack_peek(w, 1);
+        struct obj_pair *pair = pair_new(w, car, cdr);
 
-        vm_stack_pop(vm);
-        vm_stack_pop(vm);
-        vm_stack_push(vm, OBJ_VAL(pair));
+        vm_stack_pop(w);
+        vm_stack_pop(w);
+        vm_stack_push(w, OBJ_VAL(pair));
       }
     }
   } else if (arg_count != closure->lambda->arity) {
-    runtime_error(vm,
-        "Expected %" PRIu8 " arguments but got %" PRIu8,
+    runtime_error(w, "Expected %" PRIu8 " arguments but got %" PRIu8,
         closure->lambda->arity, arg_count);
     return false;
   }
 
-  if (vm->frame_count == FRAMES_MAX) {
-    runtime_error(vm, "Stack overflow");
+  if (w->frame_count == FRAMES_MAX) {
+    runtime_error(w, "Stack overflow");
     return false;
   }
 
-  struct call_frame *frame = &vm->frames[vm->frame_count++];
+  struct call_frame *frame = &w->frames[w->frame_count++];
   frame->closure = closure;
   frame->ip = closure->lambda->chunk.code;
-  frame->slots = vm->stack_top - arg_count - 1;
+  frame->slots = w->stack_top - arg_count - 1;
   return true;
 }
 
-static bool call_value(struct vm *vm, Value callee, uint8_t arg_count)
+static bool call_value(struct wisp_state *w, Value callee, uint8_t arg_count)
 {
   if (IS_OBJ(callee)) {
     switch (OBJ_TYPE(callee)) {
     case OBJ_CLOSURE:
-      return call(vm, AS_CLOSURE(callee), arg_count);
+      return call(w, AS_CLOSURE(callee), arg_count);
     // TODO: Native functions.
     default:
       break;
     }
   }
 
-  runtime_error(vm, "Can only call functions");
+  runtime_error(w, "Can only call functions");
   return false;
 }
 
-static bool vm_run(struct vm *vm)
+static bool vm_run(struct wisp_state *w)
 {
   // TODO: Keep the frame ip in a register variable.
   // TODO: Implement optional direct threading.
-  struct call_frame *frame = &vm->frames[vm->frame_count - 1];
+  struct call_frame *frame = &w->frames[w->frame_count - 1];
 
   #define READ_BYTE() (*frame->ip++)
   #define READ_CONSTANT() \
@@ -211,7 +166,7 @@ static bool vm_run(struct vm *vm)
   for (;;) {
 #ifdef DEBUG_TRACE_EXECUTION
     printf(" ");
-    for (Value *slot = vm->stack; slot < vm->stack_top; ++slot) {
+    for (Value *slot = w->stack; slot < w->stack_top; ++slot) {
       printf("[ ");
       value_print(*slot);
       printf(" ]");
@@ -225,129 +180,129 @@ static bool vm_run(struct vm *vm)
     switch (instruction) {
     case OP_CONSTANT: {
       Value constant = READ_CONSTANT();
-      vm_stack_push(vm, constant);
+      vm_stack_push(w, constant);
       break;
     }
     case OP_NIL:
-      vm_stack_push(vm, NIL_VAL);
+      vm_stack_push(w, NIL_VAL);
       break;
     case OP_CALL: {
       uint8_t arg_count = READ_BYTE();
 
-      if (!call_value(vm, vm_stack_peek(vm, arg_count), arg_count))
+      if (!call_value(w, vm_stack_peek(w, arg_count), arg_count))
         return false;
 
-      frame = &vm->frames[vm->frame_count - 1];
+      frame = &w->frames[w->frame_count - 1];
       break;
     }
     case OP_DOT_CALL: {
-      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
-        runtime_error(vm, "A lambda must be applied to a cons pair");
+      if (!IS_PAIR(vm_stack_peek(w, 0))) {
+        runtime_error(w, "A lambda must be applied to a cons pair");
         return false;
       }
 
       uint8_t arg_count = READ_BYTE();
-      Value cdr = vm_stack_pop(vm);
+      Value cdr = vm_stack_pop(w);
 
       do {
         struct obj_pair *pair = AS_PAIR(cdr);
         cdr = pair->cdr;
-        vm_stack_push(vm, pair->car);
+        vm_stack_push(w, pair->car);
         arg_count++;
       } while (IS_PAIR(cdr));
 
       if (!IS_NIL(cdr)) {
-        runtime_error(vm, "Attempt to apply a lambda to a non-list pair");
+        runtime_error(w, "Attempt to apply a lambda to a non-list pair");
         return false;
       }
 
-      if (!call_value(vm, vm_stack_peek(vm, arg_count), arg_count))
+      if (!call_value(w, vm_stack_peek(w, arg_count), arg_count))
         return false;
 
-      frame = &vm->frames[vm->frame_count - 1];
+      frame = &w->frames[w->frame_count - 1];
       break;
     }
     case OP_CLOSURE: {
       struct obj_lambda *lambda = AS_LAMBDA(READ_CONSTANT());
-      struct obj_closure *closure = closure_new(vm->w, lambda);
-      vm_stack_push(vm, OBJ_VAL(closure));
+      struct obj_closure *closure = closure_new(w, lambda);
+      vm_stack_push(w, OBJ_VAL(closure));
 
       for (int i = 0; i < closure->upvalue_count; ++i) {
         uint8_t is_local = READ_BYTE();
         uint8_t index = READ_BYTE();
         closure->upvalues[i] = is_local
-                             ? capture_upvalue(vm, frame->slots + index)
+                             ? capture_upvalue(w, frame->slots + index)
                              : frame->closure->upvalues[index];
       }
       break;
     }
     case OP_RETURN: {
-      Value result = vm_stack_pop(vm);
-      close_upvalues(vm, frame->slots);
-      vm->frame_count--;
+      Value result = vm_stack_pop(w);
+      close_upvalues(w, frame->slots);
+      w->frame_count--;
 
-      if (vm->frame_count == 0) {
-        vm_stack_pop(vm);
+      if (w->frame_count == 0) {
+        vm_stack_pop(w);
         return true;
       }
 
-      vm->stack_top = frame->slots;
-      vm_stack_push(vm, result);
-      frame = &vm->frames[vm->frame_count - 1];
+      w->stack_top = frame->slots;
+      vm_stack_push(w, result);
+      frame = &w->frames[w->frame_count - 1];
       break;
     }
     case OP_CONS: {
-      Value cdr = vm_stack_peek(vm, 0);
-      Value car = vm_stack_peek(vm, 1);
-      struct obj_pair *pair = pair_new(vm->w, car, cdr);
+      Value cdr = vm_stack_peek(w, 0);
+      Value car = vm_stack_peek(w, 1);
+      struct obj_pair *pair = pair_new(w, car, cdr);
 
-      vm_stack_pop(vm);
-      vm_stack_pop(vm);
-      vm_stack_push(vm, OBJ_VAL(pair));
+      vm_stack_pop(w);
+      vm_stack_pop(w);
+      vm_stack_push(w, OBJ_VAL(pair));
       break;
     }
     case OP_CAR:
-      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
-        runtime_error(vm, "Operand must be a cons pair");
+      if (!IS_PAIR(vm_stack_peek(w, 0))) {
+        runtime_error(w, "Operand must be a cons pair");
         return false;
       }
 
-      vm_stack_push(vm, AS_PAIR(vm_stack_pop(vm))->car);
+      vm_stack_push(w, AS_PAIR(vm_stack_pop(w))->car);
       break;
     case OP_CDR:
-      if (!IS_PAIR(vm_stack_peek(vm, 0))) {
-        runtime_error(vm, "Operand must be a cons pair");
+      if (!IS_PAIR(vm_stack_peek(w, 0))) {
+        runtime_error(w, "Operand must be a cons pair");
         return false;
       }
 
-      vm_stack_push(vm, AS_PAIR(vm_stack_pop(vm))->cdr);
+      vm_stack_push(w, AS_PAIR(vm_stack_pop(w))->cdr);
       break;
     case OP_DEFINE_GLOBAL: {
       struct obj_string *name = READ_ATOM();
-      table_set(vm->w, &vm->w->globals, name, vm_stack_peek(vm, 0));
-      vm_stack_pop(vm);
+      table_set(w, &w->globals, name, vm_stack_peek(w, 0));
+      vm_stack_pop(w);
       break;
     }
     case OP_GET_LOCAL: {
       uint8_t slot = READ_BYTE();
-      vm_stack_push(vm, frame->slots[slot]);
+      vm_stack_push(w, frame->slots[slot]);
       break;
     }
     case OP_GET_UPVALUE: {
       uint8_t slot = READ_BYTE();
-      vm_stack_push(vm, *frame->closure->upvalues[slot]->location);
+      vm_stack_push(w, *frame->closure->upvalues[slot]->location);
       break;
     }
     case OP_GET_GLOBAL: {
       struct obj_string *name = READ_ATOM();
       Value val;
 
-      if (!table_get(&vm->w->globals, name, &val)) {
-        runtime_error(vm, "Undefined variable: '%s'", name->chars);
+      if (!table_get(&w->globals, name, &val)) {
+        runtime_error(w, "Undefined variable: '%s'", name->chars);
         return false;
       }
 
-      vm_stack_push(vm, val);
+      vm_stack_push(w, val);
       break;
     }
     }
@@ -360,17 +315,15 @@ static bool vm_run(struct vm *vm)
 
 bool interpret(struct wisp_state *w, struct obj_lambda *lambda)
 {
-  struct vm vm;
-  vm_init(&vm, w);
+  vm_stack_reset(w);
 
-  vm_stack_push(&vm, OBJ_VAL(lambda));
-  struct obj_closure *closure = closure_new(vm.w, lambda);
-  vm_stack_pop(&vm);
-  vm_stack_push(&vm, OBJ_VAL(closure));
+  vm_stack_push(w, OBJ_VAL(lambda));
+  struct obj_closure *closure = closure_new(w, lambda);
+  vm_stack_pop(w);
+  vm_stack_push(w, OBJ_VAL(closure));
 
-  call(&vm, closure, 0);
-  bool result = vm_run(&vm);
+  call(w, closure, 0);
+  bool result = vm_run(w);
 
-  vm_free(&vm);
   return result;
 }

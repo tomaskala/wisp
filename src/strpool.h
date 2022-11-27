@@ -4,7 +4,17 @@
 // Source: https://nullprogram.com/blog/2022/08/08/
 
 #include "common.h"
-#include "state.h"
+
+struct str_pool {
+  // log2(capacity)
+  int exp;
+
+  // Number of elements present in the hash table.
+  int count;
+
+  // Array representation of the hash table.
+  struct obj_string **ht;
+};
 
 void str_pool_init(struct wisp_state *);
 

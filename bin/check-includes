@@ -1,0 +1,22 @@
+#!/bin/sh
+# Find duplicated includes between .c and .h files of the same name.
+# Search in the directory given by the first argument, or default to
+# './src' if none was provided.
+set -eu
+
+exitcode=0
+
+for cfile in "${1:-./src}"/*.c; do
+  hfile="${cfile%.c}.h"
+  [ ! -e "${hfile}" ] && continue
+  duplicates=$(grep -h '#include  *\(".*"\)\|\(<.*>\)' "${cfile}" "${hfile}" \
+    | sort | uniq -d)
+
+  if [ -n "${duplicates}" ]; then
+    printf '%s and %s contain duplicated includes:\n' "${hfile}" "${cfile}"
+    printf '%s\n' "${duplicates}"
+    exitcode=1
+  fi
+done
+
+exit "${exitcode}"

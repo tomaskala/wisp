@@ -6,11 +6,23 @@
 #include "state.h"
 #include "value.h"
 
+static void wisp_collect_garbage(struct wisp_state *w)
+{
+  (void) w;
+  // TODO
+}
+
 void *wisp_realloc(struct wisp_state *w, void *ptr, size_t old_size,
     size_t new_size)
 {
-  (void) w;  // TODO
-  (void) old_size;  // TODO
+  w->bytes_allocated += new_size - old_size;
+  if (new_size > old_size) {
+#ifdef DEBUG_STRESS_GC
+    wisp_collect_garbage(w);
+#endif
+    if (w->bytes_allocated > w->next_gc)
+      wisp_collect_garbage(w);
+  }
 
   if (new_size == 0) {
     free(ptr);
@@ -27,8 +39,16 @@ void *wisp_realloc(struct wisp_state *w, void *ptr, size_t old_size,
 void *wisp_calloc(struct wisp_state *w, size_t old_nmemb, size_t new_nmemb,
     size_t size)
 {
-  (void) w;  // TODO
-  (void) old_nmemb;  // TODO
+  size_t old_size = old_nmemb * size;
+  size_t new_size = new_nmemb * size;
+  w->bytes_allocated += new_size - old_size;
+  if (new_size > old_size) {
+#ifdef DEBUG_STRESS_GC
+    wisp_collect_garbage(w);
+#endif
+    if (w->bytes_allocated > w->next_gc)
+      wisp_collect_garbage(w);
+  }
 
   void *result = calloc(new_nmemb, size);
   if (result == NULL)

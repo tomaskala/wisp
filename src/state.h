@@ -50,6 +50,21 @@ struct wisp_state {
 
   // A mapping of global variable names to their values.
   struct table globals;
+
+  // Total number of allocated bytes.
+  size_t bytes_allocated;
+
+  // Once 'bytes_allocated' exceeds this number, do a GC run.
+  size_t next_gc;
+
+  // Number of gray objects currently in 'gray_stack'.
+  int gray_count;
+
+  // Capacity of the 'gray_stack' array.
+  int gray_capacity;
+
+  // Contains all collectable objects marked gray in the current GC run.
+  struct obj **gray_stack;
 };
 
 void wisp_state_init(struct wisp_state *);

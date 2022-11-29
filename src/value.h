@@ -94,6 +94,7 @@ enum obj_type {
 
 struct obj {
   enum obj_type type;
+  bool is_marked;
   struct obj *next;
 };
 
@@ -183,5 +184,7 @@ struct obj_lambda *lambda_new(struct wisp_state *);
 struct obj_upvalue *upvalue_new(struct wisp_state *, Value *);
 
 struct obj_pair *pair_new(struct wisp_state *, Value, Value);
+
+void object_print(Value);
 
 #endif

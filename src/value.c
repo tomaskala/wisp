@@ -8,8 +8,6 @@
 // Primitive values.
 // ============================================================================
 
-static void object_print(Value val);
-
 void value_print(Value val)
 {
   switch (val.type) {
@@ -107,6 +105,7 @@ static struct obj *allocate_obj(struct wisp_state *w, size_t size,
 {
   struct obj *obj = wisp_realloc(w, NULL, 0, size);
   obj->type = type;
+  obj->is_marked = false;
   obj->next = w->objects;
   w->objects = obj;
 #ifdef DEBUG_LOG_GC
@@ -179,7 +178,8 @@ struct obj_pair *pair_new(struct wisp_state *w, Value car, Value cdr)
   return pair;
 }
 
-static void object_print(Value val)
+// TODO: This should accept a struct obj *.
+void object_print(Value val)
 {
   switch (OBJ_TYPE(val)) {
   case OBJ_ATOM:

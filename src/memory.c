@@ -4,57 +4,105 @@
 
 #include "memory.h"
 #include "state.h"
-#include "value.h"
 
-static void wisp_collect_garbage(struct wisp_state *w)
+#define GC_HEAP_GROW_FACTOR 2
+
+void object_mark(struct wisp_state *w, struct obj *obj)
 {
-  (void) w;
-  // TODO
+  if (obj == NULL || obj->is_marked)
+    return;
+
+#ifdef DEBUG_LOG_GC
+  printf("%p mark ", (void *) obj);
+  object_print(OBJ_VAL(obj));
+  printf("\n");
+#endif
+  obj->is_marked = true;
+
+  if (w->gray_count >= w->gray_capacity) {
+    w->gray_capacity = GROW_CAPACITY(w->gray_capacity);
+    w->gray_stack = realloc(w->gray_stack,
+        sizeof(struct obj *) * w->gray_capacity);
+
+    // TODO: Pre-allocate a bit of memory and release it here.
+    if (w->gray_stack == NULL)
+      exit(1);
+  }
+
+  w->gray_stack[w->gray_count++] = obj;
 }
 
-void *wisp_realloc(struct wisp_state *w, void *ptr, size_t old_size,
-    size_t new_size)
+static void mark_roots(struct wisp_state *w)
 {
-  w->bytes_allocated += new_size - old_size;
-  if (new_size > old_size) {
-#ifdef DEBUG_STRESS_GC
-    wisp_collect_garbage(w);
-#endif
-    if (w->bytes_allocated > w->next_gc)
-      wisp_collect_garbage(w);
-  }
+  for (Value *slot = w->stack; slot < w->stack_top; ++slot)
+    if (IS_OBJ(*slot))
+      object_mark(w, AS_OBJ(*slot));
 
-  if (new_size == 0) {
-    free(ptr);
-    return NULL;
-  }
+  for (int i = 0; i < w->frame_count; ++i)
+    object_mark(w, (struct obj *) w->frames[i].closure);
 
-  void *result = realloc(ptr, new_size);
-  if (result == NULL)
-    exit(1);
+  for (struct obj_upvalue *upvalue = w->open_upvalues;
+      upvalue != NULL;
+      upvalue = upvalue->next)
+    object_mark(w, (struct obj *) upvalue);
 
-  return result;
+  table_mark(w, &w->globals);
+
+  // compiler_mark_roots();  // TODO
 }
 
-void *wisp_calloc(struct wisp_state *w, size_t old_nmemb, size_t new_nmemb,
-    size_t size)
+static void object_blacken(struct wisp_state *w, struct obj *obj)
 {
-  size_t old_size = old_nmemb * size;
-  size_t new_size = new_nmemb * size;
-  w->bytes_allocated += new_size - old_size;
-  if (new_size > old_size) {
-#ifdef DEBUG_STRESS_GC
-    wisp_collect_garbage(w);
+#ifdef DEBUG_LOG_GC
+  printf("%p blacken ", (void *) obj);
+  object_print(OBJ_VAL(obj));
+  printf("\n");
 #endif
-    if (w->bytes_allocated > w->next_gc)
-      wisp_collect_garbage(w);
+  switch (obj->type) {
+  case OBJ_ATOM:
+    break;
+  case OBJ_CLOSURE: {
+    struct obj_closure *closure = (struct obj_closure *) obj;
+    object_mark(w, (struct obj *) closure->lambda);
+
+    for (int i = 0; i < closure->upvalue_count; ++i)
+      object_mark(w, (struct obj *) closure->upvalues[i]);
+    break;
   }
+  case OBJ_LAMBDA: {
+    struct obj_lambda *lambda = (struct obj_lambda *) obj;
 
-  void *result = calloc(new_nmemb, size);
-  if (result == NULL)
-    exit(1);
+    for (int i = 0; i < lambda->chunk.constants.count; ++i)
+      if (IS_OBJ(lambda->chunk.constants.values[i]))
+        object_mark(w, AS_OBJ(lambda->chunk.constants.values[i]));
+    break;
+  }
+  case OBJ_UPVALUE: {
+    struct obj_upvalue *upvalue = (struct obj_upvalue *) obj;
 
-  return result;
+    if (IS_OBJ(upvalue->closed))
+      object_mark(w, AS_OBJ(upvalue->closed));
+    break;
+  }
+  case OBJ_PAIR: {
+    struct obj_pair *pair = (struct obj_pair *) obj;
+
+    if (IS_OBJ(pair->car))
+      object_mark(w, AS_OBJ(pair->car));
+
+    if (IS_OBJ(pair->cdr))
+      object_mark(w, AS_OBJ(pair->cdr));
+    break;
+  }
+  }
+}
+
+static void trace_references(struct wisp_state *w)
+{
+  while (w->gray_count > 0) {
+    struct obj *obj = w->gray_stack[--w->gray_count];
+    object_blacken(w, obj);
+  }
 }
 
 static void obj_free(struct wisp_state *w, struct obj *obj)
@@ -89,6 +137,93 @@ static void obj_free(struct wisp_state *w, struct obj *obj)
     FREE(w, struct obj_pair, obj);
     break;
   }
+}
+
+static void sweep(struct wisp_state *w)
+{
+  struct obj *prev = NULL;
+  struct obj *obj = w->objects;
+
+  while (obj != NULL) {
+    if (obj->is_marked) {
+      obj->is_marked = false;
+      prev = obj;
+      obj = obj->next;
+    } else {
+      struct obj *unreached = obj;
+      obj = obj->next;
+
+      if (prev == NULL)
+        w->objects = obj;
+      else
+        prev->next = obj;
+
+      obj_free(w, unreached);
+    }
+  }
+}
+
+static void collect_garbage(struct wisp_state *w)
+{
+#ifdef DEBUG_LOG_GC
+  printf("-- gc begin --\n");
+  size_t before = w->bytes_allocated;
+#endif
+  mark_roots(w);
+  trace_references(w);
+  str_pool_remove_white(w);
+  sweep(w);
+  w->next_gc = w->bytes_allocated * GC_HEAP_GROW_FACTOR;
+#ifdef DEBUG_LOG_GC
+  printf("-- gc end --\n");
+  printf("  collected %zu bytes (from %zu to %zu), next at %zu\n",
+      before - w->bytes_allocated, before, w->bytes_allocated, w->next_gc);
+#endif
+}
+
+void *wisp_realloc(struct wisp_state *w, void *ptr, size_t old_size,
+    size_t new_size)
+{
+  w->bytes_allocated += new_size - old_size;
+  if (new_size > old_size) {
+#ifdef DEBUG_STRESS_GC
+    collect_garbage(w);
+#endif
+    if (w->bytes_allocated > w->next_gc)
+      collect_garbage(w);
+  }
+
+  if (new_size == 0) {
+    free(ptr);
+    return NULL;
+  }
+
+  void *result = realloc(ptr, new_size);
+  if (result == NULL)
+    exit(1);
+
+  return result;
+}
+
+void *wisp_calloc(struct wisp_state *w, size_t old_nmemb, size_t new_nmemb,
+    size_t size)
+{
+  size_t old_size = old_nmemb * size;
+  size_t new_size = new_nmemb * size;
+  w->bytes_allocated += new_size - old_size;
+  if (new_size > old_size) {
+#ifdef DEBUG_STRESS_GC
+    collect_garbage(w);
+#endif
+    if (w->bytes_allocated > w->next_gc)
+      collect_garbage(w);
+  }
+
+  void *result = calloc(new_nmemb, size);
+  if (result == NULL)
+    exit(1);
+
+  return result;
 }
 
 void wisp_free_objects(struct wisp_state *w)

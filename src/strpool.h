@@ -20,6 +20,8 @@ void str_pool_init(struct wisp_state *);
 
 struct obj_string *str_pool_intern(struct wisp_state *, const char *, size_t);
 
+void str_pool_remove_white(struct wisp_state *);
+
 void str_pool_free(struct wisp_state *);
 
 #endif

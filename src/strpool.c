@@ -96,6 +96,11 @@ struct obj_string *str_pool_intern(struct wisp_state *w, const char *str,
   }
 }
 
+void str_pool_remove_white(struct wisp_state *w)
+{
+  (void) w;  // TODO
+}
+
 void str_pool_free(struct wisp_state *w)
 {
   struct str_pool *pool = &w->str_pool;

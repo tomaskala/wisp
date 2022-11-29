@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "common.h"
+#include "value.h"
 
 #define ALLOCATE(w, type, count) \
   wisp_realloc(w, NULL, 0, sizeof(type) * (count))
@@ -19,6 +20,8 @@
 
 #define FREE_ARRAY(w, type, ptr, old_count) \
   wisp_realloc(w, ptr, sizeof(type) * (old_count), 0)
+
+void object_mark(struct wisp_state *, struct obj *);
 
 void *wisp_realloc(struct wisp_state *, void *, size_t, size_t);
 

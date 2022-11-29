@@ -112,6 +112,17 @@ bool table_delete(struct table *table, struct obj_string *key)
   return true;
 }
 
+void table_mark(struct wisp_state *w, struct table *table)
+{
+  for (int i = 0; i < table->capacity; ++i) {
+    struct table_node *node = &table->ht[i];
+
+    object_mark(w, (struct obj *) node->key);
+    if (IS_OBJ(node->val))
+      object_mark(w, AS_OBJ(node->val));
+  }
+}
+
 void table_free(struct wisp_state *w, struct table *table)
 {
   FREE_ARRAY(w, struct table_node, table->ht, table->capacity);

@@ -25,6 +25,8 @@ bool table_set(struct wisp_state *, struct table *, struct obj_string *,
 
 bool table_delete(struct table *, struct obj_string *);
 
+void table_mark(struct wisp_state *, struct table *);
+
 void table_free(struct wisp_state *, struct table *);
 
 #endif

@@ -142,6 +142,9 @@ void str_pool_remove_white(struct wisp_state *w)
 {
   struct str_pool *pool = &w->str_pool;
 
+  if (pool->ht == NULL)
+    return;
+
   for (int i = 0; i < CAPACITY(pool->exp); ++i) {
     if (pool->ht[i] != NULL && !pool->ht[i]->obj.is_marked)
       str_pool_unintern(w, pool->ht[i]);

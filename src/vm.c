@@ -10,7 +10,7 @@
 #include "debug.h"
 #endif
 
-static void vm_stack_reset(struct wisp_state *w)
+void vm_stack_reset(struct wisp_state *w)
 {
   w->frame_count = 0;
   w->stack_top = w->stack;

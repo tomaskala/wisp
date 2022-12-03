@@ -24,14 +24,6 @@ struct parser {
   bool had_error;
 };
 
-enum function_type {
-  // Currently compiling a lambda.
-  TYPE_LAMBDA,
-
-  // Currently compiling the global scope.
-  TYPE_SCRIPT,
-};
-
 struct local {
   // Token holding the local variable name.
   struct token name;
@@ -66,9 +58,6 @@ struct compiler {
   // Currently compiled lambda (or NULL if in global scope).
   struct obj_lambda *lambda;
 
-  // Type of the currently compiled lambda.
-  enum function_type type;
-
   // Local variables defined in the currently compiled lambda.
   struct local locals[UINT8_COUNT];
 
@@ -90,13 +79,12 @@ static void parser_init(struct parser *p, struct scanner *sc)
 }
 
 static void compiler_init(struct compiler *c, struct wisp_state *w,
-    struct compiler *enclosing, struct parser *p, enum function_type type)
+    struct compiler *enclosing, struct parser *p)
 {
   c->w = w;
   c->enclosing = enclosing;
   c->parser = p;
   c->lambda = NULL;
-  c->type = type;
   c->local_count = 0;
   c->scope_depth = 0;
   c->lambda = lambda_new(c->w);
@@ -302,7 +290,7 @@ static void define(struct compiler *c)
 static void lambda(struct compiler *c)
 {
   struct compiler inner;
-  compiler_init(&inner, c->w, c, c->parser, TYPE_LAMBDA);
+  compiler_init(&inner, c->w, c, c->parser);
   scope_begin(&inner);
 
   if (match(inner.parser, TOKEN_LEFT_PAREN)) {
@@ -591,7 +579,7 @@ struct obj_lambda *compile(struct wisp_state *w, const char *source)
   parser_init(&p, &sc);
 
   struct compiler c;
-  compiler_init(&c, w, NULL, &p, TYPE_SCRIPT);
+  compiler_init(&c, w, NULL, &p);
 
   advance(&p);
   while (!match(&p, TOKEN_EOF))

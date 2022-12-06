@@ -18,7 +18,7 @@ void value_print(Value val)
     printf("%g", AS_NUM(val));
     break;
   case VAL_OBJ:
-    obj_print(val);
+    obj_print(AS_OBJ(val));
     break;
   }
 }
@@ -178,12 +178,11 @@ struct obj_pair *pair_new(struct wisp_state *w, Value car, Value cdr)
   return pair;
 }
 
-// TODO: This should accept a struct obj *.
-void obj_print(Value val)
+void obj_print(struct obj *obj)
 {
-  switch (OBJ_TYPE(val)) {
+  switch (obj->type) {
   case OBJ_ATOM:
-    printf("%s", AS_ATOM(val)->chars);
+    printf("%s", ((struct obj_string *) obj)->chars);
     break;
   case OBJ_CLOSURE:
     printf("closure");
@@ -195,6 +194,8 @@ void obj_print(Value val)
     printf("upvalue");
     break;
   case OBJ_PAIR: {
+    Value val = OBJ_VAL(obj);
+
     for (putchar('(');; putchar(' ')) {
       struct obj_pair *pair = AS_PAIR(val);
       value_print(pair->car);

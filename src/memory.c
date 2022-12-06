@@ -14,7 +14,7 @@ void obj_mark(struct wisp_state *w, struct obj *obj)
 
 #ifdef DEBUG_LOG_GC
   printf("%p mark ", (void *) obj);
-  obj_print(OBJ_VAL(obj));
+  obj_print(obj);
   printf("\n");
 #endif
   obj->is_marked = true;
@@ -55,7 +55,7 @@ static void obj_blacken(struct wisp_state *w, struct obj *obj)
 {
 #ifdef DEBUG_LOG_GC
   printf("%p blacken ", (void *) obj);
-  obj_print(OBJ_VAL(obj));
+  obj_print(obj);
   printf("\n");
 #endif
   switch (obj->type) {

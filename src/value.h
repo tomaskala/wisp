@@ -185,6 +185,6 @@ struct obj_upvalue *upvalue_new(struct wisp_state *, Value *);
 
 struct obj_pair *pair_new(struct wisp_state *, Value, Value);
 
-void object_print(Value);
+void obj_print(Value);
 
 #endif

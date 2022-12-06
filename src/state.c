@@ -17,7 +17,7 @@ void wisp_state_init(struct wisp_state *w)
 
 void wisp_state_free(struct wisp_state *w)
 {
-  wisp_free_objects(w);
+  wisp_free_objs(w);
   free(w->gray_stack);
   table_free(w, &w->globals);
   str_pool_free(w);

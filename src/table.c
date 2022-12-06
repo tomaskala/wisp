@@ -117,9 +117,9 @@ void table_mark(struct wisp_state *w, struct table *table)
   for (int i = 0; i < table->capacity; ++i) {
     struct table_node *node = &table->ht[i];
 
-    object_mark(w, (struct obj *) node->key);
+    obj_mark(w, (struct obj *) node->key);
     if (IS_OBJ(node->val))
-      object_mark(w, AS_OBJ(node->val));
+      obj_mark(w, AS_OBJ(node->val));
   }
 }
 

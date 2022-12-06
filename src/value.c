@@ -18,7 +18,7 @@ void value_print(Value val)
     printf("%g", AS_NUM(val));
     break;
   case VAL_OBJ:
-    object_print(val);
+    obj_print(val);
     break;
   }
 }
@@ -179,7 +179,7 @@ struct obj_pair *pair_new(struct wisp_state *w, Value car, Value cdr)
 }
 
 // TODO: This should accept a struct obj *.
-void object_print(Value val)
+void obj_print(Value val)
 {
   switch (OBJ_TYPE(val)) {
   case OBJ_ATOM:

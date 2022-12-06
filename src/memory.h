@@ -21,12 +21,12 @@
 #define FREE_ARRAY(w, type, ptr, old_count) \
   wisp_realloc(w, ptr, sizeof(type) * (old_count), 0)
 
-void object_mark(struct wisp_state *, struct obj *);
+void obj_mark(struct wisp_state *, struct obj *);
 
 void *wisp_realloc(struct wisp_state *, void *, size_t, size_t);
 
 void *wisp_calloc(struct wisp_state *, size_t, size_t, size_t);
 
-void wisp_free_objects(struct wisp_state *);
+void wisp_free_objs(struct wisp_state *);
 
 #endif

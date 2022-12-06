@@ -7,14 +7,14 @@
 
 #define GC_HEAP_GROW_FACTOR 2
 
-void object_mark(struct wisp_state *w, struct obj *obj)
+void obj_mark(struct wisp_state *w, struct obj *obj)
 {
   if (obj == NULL || obj->is_marked)
     return;
 
 #ifdef DEBUG_LOG_GC
   printf("%p mark ", (void *) obj);
-  object_print(OBJ_VAL(obj));
+  obj_print(OBJ_VAL(obj));
   printf("\n");
 #endif
   obj->is_marked = true;
@@ -36,26 +36,26 @@ static void mark_roots(struct wisp_state *w)
 {
   for (Value *slot = w->stack; slot < w->stack_top; ++slot)
     if (IS_OBJ(*slot))
-      object_mark(w, AS_OBJ(*slot));
+      obj_mark(w, AS_OBJ(*slot));
 
   for (int i = 0; i < w->frame_count; ++i)
-    object_mark(w, (struct obj *) w->frames[i].closure);
+    obj_mark(w, (struct obj *) w->frames[i].closure);
 
   for (struct obj_upvalue *upvalue = w->open_upvalues;
       upvalue != NULL;
       upvalue = upvalue->next)
-    object_mark(w, (struct obj *) upvalue);
+    obj_mark(w, (struct obj *) upvalue);
 
   table_mark(w, &w->globals);
 
   // compiler_mark_roots();  // TODO
 }
 
-static void object_blacken(struct wisp_state *w, struct obj *obj)
+static void obj_blacken(struct wisp_state *w, struct obj *obj)
 {
 #ifdef DEBUG_LOG_GC
   printf("%p blacken ", (void *) obj);
-  object_print(OBJ_VAL(obj));
+  obj_print(OBJ_VAL(obj));
   printf("\n");
 #endif
   switch (obj->type) {
@@ -63,10 +63,10 @@ static void object_blacken(struct wisp_state *w, struct obj *obj)
     break;
   case OBJ_CLOSURE: {
     struct obj_closure *closure = (struct obj_closure *) obj;
-    object_mark(w, (struct obj *) closure->lambda);
+    obj_mark(w, (struct obj *) closure->lambda);
 
     for (int i = 0; i < closure->upvalue_count; ++i)
-      object_mark(w, (struct obj *) closure->upvalues[i]);
+      obj_mark(w, (struct obj *) closure->upvalues[i]);
     break;
   }
   case OBJ_LAMBDA: {
@@ -74,24 +74,24 @@ static void object_blacken(struct wisp_state *w, struct obj *obj)
 
     for (int i = 0; i < lambda->chunk.constants.count; ++i)
       if (IS_OBJ(lambda->chunk.constants.values[i]))
-        object_mark(w, AS_OBJ(lambda->chunk.constants.values[i]));
+        obj_mark(w, AS_OBJ(lambda->chunk.constants.values[i]));
     break;
   }
   case OBJ_UPVALUE: {
     struct obj_upvalue *upvalue = (struct obj_upvalue *) obj;
 
     if (IS_OBJ(upvalue->closed))
-      object_mark(w, AS_OBJ(upvalue->closed));
+      obj_mark(w, AS_OBJ(upvalue->closed));
     break;
   }
   case OBJ_PAIR: {
     struct obj_pair *pair = (struct obj_pair *) obj;
 
     if (IS_OBJ(pair->car))
-      object_mark(w, AS_OBJ(pair->car));
+      obj_mark(w, AS_OBJ(pair->car));
 
     if (IS_OBJ(pair->cdr))
-      object_mark(w, AS_OBJ(pair->cdr));
+      obj_mark(w, AS_OBJ(pair->cdr));
     break;
   }
   }
@@ -101,7 +101,7 @@ static void trace_references(struct wisp_state *w)
 {
   while (w->gray_count > 0) {
     struct obj *obj = w->gray_stack[--w->gray_count];
-    object_blacken(w, obj);
+    obj_blacken(w, obj);
   }
 }
 
@@ -226,7 +226,7 @@ void *wisp_calloc(struct wisp_state *w, size_t old_nmemb, size_t new_nmemb,
   return result;
 }
 
-void wisp_free_objects(struct wisp_state *w)
+void wisp_free_objs(struct wisp_state *w)
 {
   struct obj *obj = w->objects;
 

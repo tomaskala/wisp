@@ -9,7 +9,7 @@ exitcode=0
 for cfile in "${1:-./src}"/*.c; do
   hfile="${cfile%.c}.h"
   [ ! -e "${hfile}" ] && continue
-  duplicates=$(grep -h '#include  *\(".*"\)\|\(<.*>\)' "${cfile}" "${hfile}" \
+  duplicates=$(grep -h '#include  *\(\(".*"\)\|\(<.*>\)\)' "${cfile}" "${hfile}" \
     | sort | uniq -d)
 
   if [ -n "${duplicates}" ]; then

@@ -551,7 +551,7 @@ static void sexp(struct compiler *c, bool quoted)
 {
   if (match(c->parser, TOKEN_IDENTIFIER)) {
     if (quoted)
-      atom(c, &c->parser->prev);
+      emit_bytes(c, OP_CONSTANT, atom(c, &c->parser->prev));
     else
       identifier(c);
   } else if (match(c->parser, TOKEN_NUMBER))
